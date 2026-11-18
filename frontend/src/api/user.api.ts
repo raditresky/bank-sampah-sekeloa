@@ -13,5 +13,10 @@ export const userApi = {
     const res = await api.get(`/users/qr/${encodeURIComponent(kodeNasabah)}`);
     return res.data;
   },
+
+  getById: async (id: string): Promise<{ success: boolean; data: User }> => {
+    const res = await api.get(`/users/${id}`);
+    return res.data;
+  },
 };
 

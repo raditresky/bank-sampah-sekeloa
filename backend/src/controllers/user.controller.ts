@@ -31,6 +31,22 @@ export class UserController {
       next(error);
     }
   }
+
+  async getById(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const user = await userRepository.findById(id);
+
+      if (!user) {
+        return sendError(res, `Nasabah dengan ID '${id}' tidak ditemukan.`, 404);
+      }
+
+      const { passwordHash: _, ...safeUser } = user;
+      return sendSuccess(res, safeUser, 'Data nasabah berhasil ditemukan.');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const userController = new UserController();

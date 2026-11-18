@@ -8,7 +8,10 @@ export const registerSchema = z
       .string()
       .min(10, 'Nomor HP minimal 10 digit')
       .max(20, 'Nomor HP maksimal 20 digit')
-      .regex(/^[0-9+]+$/, 'Format nomor HP hanya boleh berisi angka'),
+      .transform((val) => val.trim().replace(/[\s-]/g, ''))
+      .refine((val) => /^[0-9+]+$/.test(val), {
+        message: 'Format nomor HP hanya boleh berisi angka',
+      }),
     password: z.string().min(6, 'Password minimal 6 karakter'),
     rw: z.string().min(1, 'RW wajib diisi').max(10),
     rt: z.string().max(10).optional().nullable(),
@@ -30,7 +33,10 @@ export const registerSchema = z
   );
 
 export const loginSchema = z.object({
-  nomorHp: z.string().min(1, 'Nomor HP wajib diisi'),
+  nomorHp: z
+    .string()
+    .min(1, 'Nomor HP wajib diisi')
+    .transform((val) => val.trim().replace(/[\s-]/g, '')),
   password: z.string().min(1, 'Password wajib diisi'),
 });
 

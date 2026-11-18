@@ -9,7 +9,7 @@ export class DashboardService {
     if (user.role === UserRole.WARGA) {
       return this.getWargaSummary(user.id);
     } else {
-      return this.getAdminSummary(user.rw);
+      return this.getAdminSummary(user);
     }
   }
 
@@ -65,15 +65,22 @@ export class DashboardService {
     };
   }
 
-  private async getAdminSummary(rw: string) {
+  private async getAdminSummary(user: JwtPayload) {
+    const rw = user.rw;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Kas Pos RW
+    // Kas Pos RW (untuk targetKg & namaUnit saja)
     const kasPos = await kasPosRepository.findByRw(rw);
+
+    // Saldo kas pribadi petugas yang sedang login
+    const currentUserData = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { saldoKas: true },
+    });
 
     // Transaksi hari ini di RW
     const transaksiHariIni = await prisma.transaksiSampah.findMany({
@@ -131,7 +138,7 @@ export class DashboardService {
       pos: {
         rw,
         namaUnit: kasPos?.namaUnit || `Pos Bank Sampah ${rw}`,
-        saldoKas: kasPos ? Number(kasPos.saldoKas) : 0,
+        saldoKas: Number(currentUserData?.saldoKas || 0),
         targetKg,
         progressPersen,
       },

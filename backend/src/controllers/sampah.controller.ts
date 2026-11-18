@@ -21,6 +21,44 @@ export class SampahController {
       next(error);
     }
   }
+
+  async create(req: Request, res: Response, next: NextFunction) {
+    try {
+      const created = await sampahService.createSampah(req.body);
+      return sendSuccess(
+        res,
+        created,
+        `Item sampah '${created.nama}' berhasil ditambahkan ke katalog.`,
+        201
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const updated = await sampahService.updateSampah(id, req.body);
+      return sendSuccess(res, updated, `Item sampah '${updated.nama}' berhasil diperbarui.`);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id as string;
+      const password =
+        (req.headers['x-katalog-password'] as string) ||
+        (req.query.password as string) ||
+        (req.body?.adminPassword as string);
+      const result = await sampahService.deleteSampah(id, password);
+      return sendSuccess(res, result, `Item sampah dengan kode '${id}' berhasil dihapus.`);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const sampahController = new SampahController();

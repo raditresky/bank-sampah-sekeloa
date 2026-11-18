@@ -7,11 +7,11 @@ import { UserRole } from '@prisma/client';
 
 const router = Router();
 
-// POST /api/v1/transaksi - Hanya Admin RW & Petugas Bank Sampah
+// POST /api/v1/transaksi - Hanya Admin RW
 router.post(
   '/',
   authenticate,
-  requireRole(UserRole.ADMIN_RW, UserRole.PETUGAS_BANK_SAMPAH),
+  requireRole(UserRole.ADMIN_RW),
   validateBody(createTransaksiSchema),
   (req: any, res, next) => transaksiController.create(req, res, next)
 );

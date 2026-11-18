@@ -13,6 +13,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { UserRole } from '../../types';
+import { AppLogo } from '../../components/common/AppLogo';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -39,12 +40,14 @@ export const LoginPage: React.FC = () => {
   const handleRoleTabChange = (role: 'PETUGAS' | 'WARGA') => {
     setSelectedRole(role);
     setErrorMessage(null);
-    if (role === 'PETUGAS') {
-      setNomorHp('081234567890');
-      setPassword('password123');
-    } else {
-      setNomorHp('089876543210');
-      setPassword('password123');
+    if (!isRegisterMode) {
+      if (role === 'PETUGAS') {
+        setNomorHp('081234567890');
+        setPassword('password123');
+      } else {
+        setNomorHp('089876543210');
+        setPassword('password123');
+      }
     }
   };
 
@@ -54,13 +57,23 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
+      // Normalisasi nomor HP: bersihkan spasi, tanda strip, dan sesuaikan prefix
+      let cleanNomorHp = nomorHp.trim().replace(/[\s-]/g, '');
+      if (cleanNomorHp.startsWith('+62')) {
+        cleanNomorHp = '0' + cleanNomorHp.substring(3);
+      } else if (cleanNomorHp.startsWith('62')) {
+        cleanNomorHp = '0' + cleanNomorHp.substring(2);
+      } else if (!cleanNomorHp.startsWith('0') && cleanNomorHp.length > 0) {
+        cleanNomorHp = '0' + cleanNomorHp;
+      }
+
       if (isRegisterMode) {
         const assignedRole: UserRole =
           selectedRole === 'PETUGAS' ? 'ADMIN_RW' : 'WARGA';
 
         await register({
           nama,
-          nomorHp,
+          nomorHp: cleanNomorHp,
           password,
           rw,
           rt: rt || undefined,
@@ -70,7 +83,7 @@ export const LoginPage: React.FC = () => {
         });
       } else {
         await login({
-          nomorHp,
+          nomorHp: cleanNomorHp,
           password,
         });
       }
@@ -78,8 +91,13 @@ export const LoginPage: React.FC = () => {
       navigate('/');
     } catch (err: any) {
       console.error(err);
+      const validationDetails = Array.isArray(err.response?.data?.error)
+        ? err.response.data.error.map((e: any) => e.message).join('. ')
+        : null;
+
       setErrorMessage(
-        err.response?.data?.message ||
+        validationDetails ||
+          err.response?.data?.message ||
           'Terjadi kesalahan saat memproses data. Silakan coba lagi.'
       );
     } finally {
@@ -92,13 +110,8 @@ export const LoginPage: React.FC = () => {
       <div className="w-full pt-4">
         {/* App Logo & Title */}
         <div className="flex flex-col items-center text-center mb-6">
-          <div className="relative mb-3">
-            <div className="w-16 h-16 rounded-full bg-forest-900 border-4 border-forest-100 flex items-center justify-center text-white text-2xl shadow-md">
-              <span className="text-forest-200">♻</span>
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-forest-600 text-white flex items-center justify-center border-2 border-white">
-              <CheckCircle className="w-3.5 h-3.5" />
-            </div>
+          <div className="mb-3">
+            <AppLogo size="lg" showCheckmark={true} />
           </div>
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">Bank Sampah Sekeloa</h1>
           <p className="text-xs text-gray-500 font-medium mt-1">
@@ -110,7 +123,7 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Dual Tab Role Selector (Petugas vs Warga) */}
+        {/* Dual Tab Role Selector (Admin RW vs Warga) */}
         <div className="bg-gray-200/80 p-1.5 rounded-2xl flex space-x-1 mb-5">
           <button
             type="button"
@@ -122,7 +135,7 @@ export const LoginPage: React.FC = () => {
             }`}
           >
             <Briefcase className="w-4 h-4 text-forest-800" />
-            <span>Petugas RW</span>
+            <span>Admin RW</span>
           </button>
           <button
             type="button"
@@ -151,11 +164,11 @@ export const LoginPage: React.FC = () => {
             </span>
             <div>
               <p className="text-xs font-bold text-forest-900">
-                {selectedRole === 'PETUGAS' ? 'Mode Petugas Lapangan' : 'Mode Warga / Nasabah'}
+                {selectedRole === 'PETUGAS' ? 'Mode Admin RW' : 'Mode Warga / Nasabah'}
               </p>
               <p className="text-[11px] text-forest-700 leading-relaxed mt-0.5">
                 {selectedRole === 'PETUGAS'
-                  ? 'Gunakan akun terdaftar pengurus RW untuk mencatat transaksi penimbangan.'
+                  ? 'Gunakan akun Admin RW untuk operasional penimbangan, pencairan tabungan, dan kelola pos.'
                   : 'Gunakan akun warga untuk melihat buku tabungan, struk digital, dan kartu QR nasabah.'}
               </p>
             </div>
@@ -169,8 +182,22 @@ export const LoginPage: React.FC = () => {
             <button
               type="button"
               onClick={() => {
-                setIsRegisterMode(!isRegisterMode);
+                const nextMode = !isRegisterMode;
+                setIsRegisterMode(nextMode);
                 setErrorMessage(null);
+                if (nextMode) {
+                  setNama('');
+                  setNomorHp('');
+                  setPassword('');
+                } else {
+                  if (selectedRole === 'PETUGAS') {
+                    setNomorHp('081234567890');
+                    setPassword('password123');
+                  } else {
+                    setNomorHp('089876543210');
+                    setPassword('password123');
+                  }
+                }
               }}
               className="text-xs font-bold text-forest-700 hover:text-forest-900 transition"
             >
@@ -258,7 +285,7 @@ export const LoginPage: React.FC = () => {
                   className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
                 />
                 <p className="text-[10px] text-amber-700 mt-1">
-                  Kode ini hanya diberikan oleh Ketua RW / Koordinator Bank Sampah Sekeloa.
+                  Kode ini diberikan oleh Ketua RW / Koordinator (Default Demo: <span className="font-mono font-bold">SEKELOA_JUARA_2026</span>).
                 </p>
               </div>
             )}
@@ -277,8 +304,15 @@ export const LoginPage: React.FC = () => {
                   type="tel"
                   required
                   placeholder="812-3456-7890"
-                  value={nomorHp.startsWith('+62') ? nomorHp.replace('+62', '') : nomorHp}
-                  onChange={(e) => setNomorHp(e.target.value)}
+                  value={nomorHp.replace(/^(\+62|0)/, '')}
+                  onChange={(e) => {
+                    let val = e.target.value.replace(/\D/g, '');
+                    if (val.startsWith('62')) {
+                      val = val.substring(2);
+                    }
+                    val = val.replace(/^0+/, '');
+                    setNomorHp(val ? '0' + val : '');
+                  }}
                   className="w-full px-3 py-2.5 bg-transparent text-xs font-semibold focus:outline-none"
                 />
               </div>

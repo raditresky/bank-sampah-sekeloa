@@ -4,6 +4,8 @@ import userRoutes from './user.routes';
 import sampahRoutes from './sampah.routes';
 import transaksiRoutes from './transaksi.routes';
 import dashboardRoutes from './dashboard.routes';
+import pencairanRoutes from './pencairan.routes';
+import kasposRoutes from './kaspos.routes';
 
 const router = Router();
 
@@ -12,6 +14,8 @@ router.use('/users', userRoutes);
 router.use('/sampah', sampahRoutes);
 router.use('/transaksi', transaksiRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/pencairan', pencairanRoutes);
+router.use('/kaspos', kasposRoutes);
 
 export default router;
 

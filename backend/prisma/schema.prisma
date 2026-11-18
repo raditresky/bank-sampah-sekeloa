@@ -12,7 +12,6 @@ datasource db {
 enum UserRole {
   WARGA
   ADMIN_RW
-  PETUGAS_BANK_SAMPAH
 }
 
 enum KategoriSampah {
@@ -28,6 +27,17 @@ enum StatusPembayaran {
   TABUNGAN
 }
 
+enum StatusPencairan {
+  MENUNGGU
+  DISETUJUI
+  DITOLAK
+}
+
+enum MetodePencairan {
+  TUNAI
+  TRANSFER
+}
+
 model User {
   id               String   @id @default(uuid())
   kodeNasabah      String   @unique @map("kode_nasabah") // e.g. BS-SKL-08034 (Payload QR Code)
@@ -39,11 +49,14 @@ model User {
   unitBankSampah   String?  @map("unit_bank_sampah") @db.VarChar(255)
   role             UserRole @default(WARGA)
   saldoTabungan    Decimal  @default(0) @map("saldo_tabungan") @db.Decimal(12, 2)
+  saldoKas         Decimal  @default(0) @map("saldo_kas") @db.Decimal(12, 2)
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  transaksiWarga   TransaksiSampah[] @relation("WargaTransaksi")
-  transaksiPetugas TransaksiSampah[] @relation("PetugasTransaksi")
+  transaksiWarga   TransaksiSampah[]   @relation("WargaTransaksi")
+  transaksiPetugas TransaksiSampah[]   @relation("PetugasTransaksi")
+  pencairanWarga   PencairanTabungan[] @relation("WargaPencairan")
+  pencairanPetugas PencairanTabungan[] @relation("PetugasPencairan")
 
   @@map("users")
 }
@@ -112,5 +125,28 @@ model DetailTransaksiSampah {
 
   @@index([transaksiId])
   @@map("detail_transaksi_sampah_anorganik")
+}
+
+model PencairanTabungan {
+  id              String          @id @default(uuid())
+  nomorPencairan  String          @unique @map("nomor_pencairan") @db.VarChar(50) // e.g. WDR-20261118-0001
+  userId          String          @map("user_id")
+  rwPos           String          @map("rw_pos") @db.VarChar(10)
+  jumlahNominal   Decimal         @map("jumlah_nominal") @db.Decimal(12, 2)
+  metode          MetodePencairan @default(TUNAI)
+  catatan         String?         @db.Text
+  infoRekening    String?         @map("info_rekening") @db.VarChar(255)
+  status          StatusPencairan @default(MENUNGGU)
+  disetujuiOlehId String?         @map("disetujui_oleh_id")
+  catatanPetugas  String?         @map("catatan_petugas") @db.Text
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  warga           User            @relation("WargaPencairan", fields: [userId], references: [id], onDelete: Restrict)
+  petugas         User?           @relation("PetugasPencairan", fields: [disetujuiOlehId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([rwPos, status])
+  @@map("pencairan_tabungan")
 }
 

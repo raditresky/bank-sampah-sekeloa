@@ -11,5 +11,6 @@ export const env = {
   JWT_SECRET: process.env.JWT_SECRET || 'supersecretjwtkey_banksampah_sekeloa_2026',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
   ADMIN_INVITE_CODE: process.env.ADMIN_INVITE_CODE || 'SEKELOA_JUARA_2026',
+  KATALOG_PASSWORD: process.env.KATALOG_PASSWORD || 'sekeloasampiahjuara123!',
 };
 

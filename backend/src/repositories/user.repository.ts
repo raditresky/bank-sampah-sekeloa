@@ -15,8 +15,15 @@ export class UserRepository {
   }
 
   async findByKodeNasabah(kodeNasabah: string) {
-    return prisma.user.findUnique({
-      where: { kodeNasabah },
+    const trimmed = kodeNasabah.trim();
+    return prisma.user.findFirst({
+      where: {
+        OR: [
+          { kodeNasabah: trimmed },
+          { id: trimmed },
+          { nomorHp: trimmed },
+        ],
+      },
     });
   }
 

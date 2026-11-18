@@ -51,8 +51,8 @@ export const App: React.FC = () => {
               <Route path="/transaksi/:id" element={<DetailTransaksiPage />} />
             </Route>
 
-            {/* Protected Routes for Admin / Petugas RW Only */}
-            <Route element={<ProtectedRoute allowedRoles={['ADMIN_RW', 'PETUGAS_BANK_SAMPAH']} />}>
+            {/* Protected Routes for Admin RW Only */}
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN_RW']} />}>
               <Route path="/timbangan" element={<TimbanganPage />} />
             </Route>
 

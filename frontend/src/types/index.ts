@@ -1,8 +1,42 @@
-export type UserRole = 'WARGA' | 'ADMIN_RW' | 'PETUGAS_BANK_SAMPAH';
+export type UserRole = 'WARGA' | 'ADMIN_RW';
 
 export type KategoriSampah = 'PLASTIK' | 'KERTAS' | 'LOGAM' | 'KACA' | 'LAINNYA';
 
 export type StatusPembayaran = 'TUNAI' | 'TABUNGAN';
+
+export type StatusPencairan = 'MENUNGGU' | 'DISETUJUI' | 'DITOLAK';
+
+export type MetodePencairan = 'TUNAI' | 'TRANSFER';
+
+export interface Pencairan {
+  id: string;
+  nomorPencairan: string;
+  userId: string;
+  rwPos: string;
+  jumlahNominal: number | string;
+  metode: MetodePencairan;
+  catatan?: string | null;
+  infoRekening?: string | null;
+  status: StatusPencairan;
+  disetujuiOlehId?: string | null;
+  catatanPetugas?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  warga?: {
+    id: string;
+    nama: string;
+    kodeNasabah: string;
+    nomorHp: string;
+    rw: string;
+    rt?: string | null;
+    saldoTabungan?: number | string;
+  };
+  petugas?: {
+    id: string;
+    nama: string;
+    role: UserRole;
+  };
+}
 
 export interface User {
   id: string;
@@ -14,6 +48,7 @@ export interface User {
   unitBankSampah?: string | null;
   role: UserRole;
   saldoTabungan: number | string;
+  saldoKas?: number | string;
   createdAt?: string;
 }
 

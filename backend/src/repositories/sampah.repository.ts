@@ -60,6 +60,64 @@ export class SampahRepository {
       },
     });
   }
+
+  async create(data: {
+    id: string;
+    kategori: KategoriSampah;
+    nama: string;
+    satuan?: string;
+    deskripsi?: string | null;
+    hargaSatuan: number;
+    isActive?: boolean;
+  }) {
+    return prisma.sampahAnorganik.create({
+      data: {
+        id: data.id,
+        kategori: data.kategori,
+        nama: data.nama,
+        satuan: data.satuan || 'Kg',
+        deskripsi: data.deskripsi || null,
+        hargaSatuan: data.hargaSatuan,
+        isActive: data.isActive !== undefined ? data.isActive : true,
+      },
+    });
+  }
+
+  async update(
+    id: string,
+    data: Partial<{
+      kategori: KategoriSampah;
+      nama: string;
+      satuan: string;
+      deskripsi: string | null;
+      hargaSatuan: number;
+      isActive: boolean;
+    }>
+  ) {
+    return prisma.sampahAnorganik.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async delete(id: string) {
+    const txCount = await prisma.detailTransaksiSampah.count({
+      where: { sampahAnorganikId: id },
+    });
+
+    if (txCount > 0) {
+      // Soft-delete jika sudah ada riwayat transaksi
+      return prisma.sampahAnorganik.update({
+        where: { id },
+        data: { isActive: false },
+      });
+    }
+
+    // Hard-delete jika belum pernah dipakai transaksi
+    return prisma.sampahAnorganik.delete({
+      where: { id },
+    });
+  }
 }
 
 export const sampahRepository = new SampahRepository();

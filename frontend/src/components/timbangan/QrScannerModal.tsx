@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { X, Search, Camera, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, Search, Camera, AlertCircle, CheckCircle2, UserCheck, ArrowRight } from 'lucide-react';
 import { userApi } from '../../api/user.api';
 import { User } from '../../types';
 
@@ -9,6 +9,7 @@ interface QrScannerModalProps {
   onClose: () => void;
   onSelectWarga: (warga: User) => void;
   defaultRw?: string;
+  initialTab?: 'scan' | 'manual';
 }
 
 export const QrScannerModal: React.FC<QrScannerModalProps> = ({
@@ -16,9 +17,11 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
   onClose,
   onSelectWarga,
   defaultRw,
+  initialTab = 'scan',
 }) => {
-  const [activeTab, setActiveTab] = useState<'scan' | 'manual'>('scan');
+  const [activeTab, setActiveTab] = useState<'scan' | 'manual'>(initialTab);
   const [searchQuery, setSearchQuery] = useState('');
+  const [manualCode, setManualCode] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -26,6 +29,12 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isScannerRunningRef = useRef(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -36,10 +45,17 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
     }
 
     if (activeTab === 'scan') {
-      startCamera();
+      // Delay camera start slightly to ensure DOM element #reader-camera is painted
+      const timer = setTimeout(() => {
+        startCamera();
+      }, 100);
+      return () => {
+        clearTimeout(timer);
+        stopCamera();
+      };
     } else {
       stopCamera();
-      fetchNasabahList();
+      fetchNasabahList(searchQuery);
     }
 
     return () => {
@@ -50,9 +66,14 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
   const startCamera = async () => {
     setCameraError(null);
     try {
+      const el = document.getElementById('reader-camera');
+      if (!el) {
+        return;
+      }
+
       const devices = await Html5Qrcode.getCameras();
       if (!devices || devices.length === 0) {
-        setCameraError('Kamera tidak terdeteksi. Silakan gunakan pencarian manual.');
+        setCameraError('Kamera tidak terdeteksi pada perangkat ini. Beralih ke pencarian manual.');
         setActiveTab('manual');
         return;
       }
@@ -65,20 +86,20 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
         { facingMode: 'environment' },
         {
           fps: 10,
-          qrbox: { width: 250, height: 250 },
+          qrbox: { width: 220, height: 220 },
         },
         async (decodedText) => {
           setScannedResult(decodedText);
           await handleQrCodeFound(decodedText);
         },
         () => {
-          // Frame error (no QR found yet) - ignore
+          // ignore scan frame errors
         }
       );
       isScannerRunningRef.current = true;
     } catch (err: any) {
-      console.warn('Camera start error:', err);
-      setCameraError('Gagal mengakses kamera (izin ditolak atau kamera sedang dipakai).');
+      console.warn('Camera start note:', err);
+      setCameraError('Kamera tidak dapat diakses (izin kamera belum diberikan atau sedang digunakan aplikasi lain). Silakan gunakan pencarian nasabah manual.');
       setActiveTab('manual');
     }
   };
@@ -96,17 +117,17 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
     }
   };
 
-  const handleQrCodeFound = async (code: string) => {
+  const handleQrCodeFound = async (rawCode: string) => {
+    const code = rawCode.trim();
     await stopCamera();
     setLoading(true);
     try {
-      // Lookup citizen by QR Code
       const res = await userApi.getByKodeNasabah(code);
       if (res.data) {
         onSelectWarga(res.data);
         onClose();
       } else {
-        setCameraError(`Nasabah dengan QR '${code}' tidak ditemukan.`);
+        setCameraError(`Nasabah dengan QR / Kode '${code}' tidak ditemukan.`);
         setActiveTab('manual');
       }
     } catch {
@@ -115,6 +136,12 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleManualCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualCode.trim()) return;
+    await handleQrCodeFound(manualCode);
   };
 
   const fetchNasabahList = async (query = '') => {
@@ -157,6 +184,7 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
         {/* Tab Selector */}
         <div className="flex border-b border-gray-100 p-2 bg-gray-50/70">
           <button
+            type="button"
             onClick={() => setActiveTab('scan')}
             className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition ${
               activeTab === 'scan'
@@ -168,6 +196,7 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
             <span>Kamera QR</span>
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('manual')}
             className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition ${
               activeTab === 'manual'
@@ -191,7 +220,14 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
                 {cameraError && (
                   <div className="p-4 text-center text-white">
                     <AlertCircle className="w-8 h-8 text-amber-400 mx-auto mb-2" />
-                    <p className="text-xs text-gray-300">{cameraError}</p>
+                    <p className="text-xs text-gray-300 leading-relaxed">{cameraError}</p>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('manual')}
+                      className="mt-3 px-3 py-1.5 bg-white text-gray-900 rounded-xl text-xs font-bold shadow"
+                    >
+                      Buka Pencarian Manual
+                    </button>
                   </div>
                 )}
               </div>
@@ -204,57 +240,96 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
               )}
 
               <p className="text-[11px] text-gray-400 text-center mt-3">
-                Arahkan kamera ke Kartu QR Code pada aplikasi nasabah
+                Arahkan kamera ke Kartu QR Code nasabah untuk mendeteksi ID secara instan
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {/* Search Box */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Cari nama, nomor HP, atau RT..."
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-forest-900 focus:bg-white transition"
-                  autoFocus
-                />
-              </div>
+            <div className="space-y-3.5">
+              {/* Quick Input Kode Nasabah */}
+              <form onSubmit={handleManualCodeSubmit} className="space-y-1">
+                <label className="block text-[11px] font-bold text-gray-700">
+                  Ketik Langsung Kode / ID / No HP:
+                </label>
+                <div className="flex space-x-1.5">
+                  <input
+                    type="text"
+                    placeholder="Misal: BS-SKL-08034"
+                    value={manualCode}
+                    onChange={(e) => setManualCode(e.target.value)}
+                    className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-forest-900 focus:bg-white"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!manualCode.trim() || loading}
+                    className="px-3.5 py-2 bg-forest-900 hover:bg-forest-950 text-white rounded-xl text-xs font-bold transition disabled:opacity-40"
+                  >
+                    Pilih
+                  </button>
+                </div>
+              </form>
 
-              {/* List Nasabah */}
-              {loading ? (
-                <div className="py-8 text-center text-xs text-gray-400">Mencari nasabah...</div>
-              ) : searchResults.length === 0 ? (
-                <div className="py-8 text-center">
-                  <p className="text-xs text-gray-400">Tidak ada nasabah yang cocok</p>
+              <div className="border-t border-gray-100 pt-2">
+                {/* Search Box */}
+                <div className="relative mb-2">
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Filter nama, no HP, atau RT..."
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-forest-900 focus:bg-white transition"
+                  />
                 </div>
-              ) : (
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                  {searchResults.map((nasabah) => (
-                    <button
-                      key={nasabah.id}
-                      onClick={() => {
-                        onSelectWarga(nasabah);
-                        onClose();
-                      }}
-                      className="w-full text-left p-2.5 rounded-xl border border-gray-100 hover:border-forest-300 hover:bg-forest-50/50 flex items-center justify-between transition group"
-                    >
-                      <div>
-                        <p className="text-xs font-bold text-gray-900 group-hover:text-forest-900">
-                          {nasabah.nama}
-                        </p>
-                        <p className="text-[10px] text-gray-500">
-                          {nasabah.rw} {nasabah.rt ? `/ ${nasabah.rt}` : ''} • {nasabah.nomorHp}
-                        </p>
-                      </div>
-                      <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-700">
-                        {nasabah.kodeNasabah}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
+
+                {/* List Nasabah */}
+                {loading ? (
+                  <div className="py-8 text-center text-xs text-gray-400">
+                    Mencari data nasabah...
+                  </div>
+                ) : searchResults.length === 0 ? (
+                  <div className="py-6 text-center">
+                    <p className="text-xs font-semibold text-gray-400">
+                      Tidak ada nasabah terdaftar di {defaultRw || 'sistem'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                    {searchResults.map((nasabah) => (
+                      <button
+                        key={nasabah.id}
+                        type="button"
+                        onClick={() => {
+                          onSelectWarga(nasabah);
+                          onClose();
+                        }}
+                        className="w-full text-left p-2.5 rounded-2xl border border-gray-100 hover:border-forest-300 hover:bg-forest-50/60 flex items-center justify-between transition group active:scale-[0.99]"
+                      >
+                        <div className="flex items-center space-x-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-forest-100 text-forest-900 font-extrabold text-[11px] flex items-center justify-center flex-shrink-0">
+                            {nasabah.nama.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-900 group-hover:text-forest-900">
+                              {nasabah.nama}
+                            </p>
+                            <p className="text-[10px] text-gray-500">
+                              {nasabah.rw} {nasabah.rt ? `/ ${nasabah.rt}` : ''} • {nasabah.nomorHp}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-700 block">
+                            {nasabah.kodeNasabah}
+                          </span>
+                          <span className="text-[9px] text-forest-700 font-bold mt-0.5 block">
+                            Pilih &gt;
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -262,4 +337,3 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({
     </div>
   );
 };
-
