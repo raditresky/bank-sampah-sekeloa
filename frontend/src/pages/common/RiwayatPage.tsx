@@ -423,6 +423,14 @@ export const RiwayatPage: React.FC = () => {
                   </span>
                 </div>
               )}
+              {selectedPencairan.petugas?.nama && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Petugas / Admin Pencair:</span>
+                  <span className="font-extrabold text-forest-900">
+                    {selectedPencairan.petugas.nama}
+                  </span>
+                </div>
+              )}
               {selectedPencairan.catatan && (
                 <div className="pt-1">
                   <span className="text-gray-500">Catatan Pemohon:</span>

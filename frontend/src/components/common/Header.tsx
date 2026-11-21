@@ -211,9 +211,9 @@ export const Header: React.FC = () => {
       const permission = await Notification.requestPermission();
       setBrowserNotifPermission(permission);
       if (permission === 'granted') {
-        new Notification('Bank Sampah Sekeloa', {
+        new Notification('Sampiah', {
           body: 'Notifikasi berhasil diaktifkan! Anda akan menerima update transaksi dan pencairan.',
-          icon: '/favicon.ico',
+          icon: '/logo.png',
         });
       }
     } catch (err) {
@@ -236,13 +236,14 @@ export const Header: React.FC = () => {
           <div>
             <div className="flex items-center space-x-1.5">
               <h1 className="font-extrabold text-gray-900 text-sm tracking-tight leading-tight">
-                Bank Sampah Sekeloa
+                Sampiah
               </h1>
             </div>
             <div className="flex items-center space-x-1.5 mt-0.5">
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-forest-50 text-forest-800 border border-forest-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-forest-600 mr-1 animate-pulse"></span>
-                {user?.unitBankSampah || `${user?.rw || 'RW 08'} Kel. Sekeloa`}
+              <span className="text-[10px] text-gray-500 font-medium">Sampah jadi Rupiah</span>
+              <span className="text-gray-300">•</span>
+              <span className="inline-flex items-center px-1.5 py-0.2 rounded-md text-[10px] font-semibold bg-forest-50 text-forest-800 border border-forest-200">
+                {user?.rw || 'RW 08'}
               </span>
             </div>
           </div>

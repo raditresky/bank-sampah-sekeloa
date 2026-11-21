@@ -10,26 +10,26 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
-        name: 'Bank Sampah Sekeloa',
-        short_name: 'Bank Sampah',
-        description: 'Sistem Digitalisasi Penimbangan & Tabungan RW Kelurahan Sekeloa',
+        name: 'Sampiah',
+        short_name: 'Sampiah',
+        description: 'Sampiah - Sampah jadi Rupiah',
         theme_color: '#0B4F27',
         background_color: '#F8F9FA',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'logo.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'logo.png',
             sizes: '512x512',
             type: 'image/png',
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'logo.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable',

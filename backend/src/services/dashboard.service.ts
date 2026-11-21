@@ -73,14 +73,9 @@ export class DashboardService {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Kas Pos RW (untuk targetKg & namaUnit saja)
+    // Kas Pos RW (tersinkronisasi per RW)
     const kasPos = await kasPosRepository.findByRw(rw);
-
-    // Saldo kas pribadi petugas yang sedang login
-    const currentUserData = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { saldoKas: true },
-    });
+    const saldoKasRw = kasPos ? Number(kasPos.saldoKas) : 0;
 
     // Transaksi hari ini di RW
     const transaksiHariIni = await prisma.transaksiSampah.findMany({
@@ -137,8 +132,8 @@ export class DashboardService {
       role: 'ADMIN_OR_PETUGAS',
       pos: {
         rw,
-        namaUnit: kasPos?.namaUnit || `Pos Bank Sampah ${rw}`,
-        saldoKas: Number(currentUserData?.saldoKas || 0),
+        namaUnit: kasPos?.namaUnit || `Pos Sampiah ${rw}`,
+        saldoKas: saldoKasRw,
         targetKg,
         progressPersen,
       },

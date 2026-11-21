@@ -87,7 +87,8 @@ export const DetailTransaksiPage: React.FC = () => {
       )
       .join('%0A');
 
-    const message = `*BUKTI SETORAN BANK SAMPAH SEKELOA*%0A` +
+    const message = `*BUKTI SETORAN SAMPIAH*%0A` +
+      `*Sampah jadi Rupiah - Pos ${transaksi.rwPos}*%0A` +
       `No: ${transaksi.nomorTransaksi}%0A` +
       `Nasabah: ${transaksi.warga?.nama || '-'} (${transaksi.warga?.kodeNasabah || '-'})%0A` +
       `Waktu: ${formattedDate} WIB%0A` +
@@ -145,7 +146,7 @@ export const DetailTransaksiPage: React.FC = () => {
             ♻
           </div>
           <h3 className="font-black text-forest-950 text-base tracking-tight leading-snug">
-            BANK SAMPAH UNIT FLAMBOYAN 50
+            SAMPIAH {transaksi.rwPos ? `POS ${transaksi.rwPos}` : 'POS RW'}
           </h3>
           <p className="text-[11px] text-gray-500 font-medium mt-0.5">
             RW 08 Kelurahan Sekeloa, Coblong, Kota Bandung
@@ -277,7 +278,7 @@ export const DetailTransaksiPage: React.FC = () => {
           </div>
           <div>
             <p className="text-[10px] font-mono text-gray-500 font-semibold uppercase">
-              Tanda Tangan Digital Bank Sampah Sekeloa
+              Tanda Tangan Digital Sampiah
             </p>
             <p className="text-[9px] font-mono text-gray-400 mt-0.5 truncate max-w-[200px]">
               ID:{transaksi.id}

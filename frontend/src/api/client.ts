@@ -1,11 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api/v1',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 10000,
+  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
+  headers: { 'Content-Type': 'application/json' },
 });
 
 // Interceptor untuk menambahkan Bearer token otomatis

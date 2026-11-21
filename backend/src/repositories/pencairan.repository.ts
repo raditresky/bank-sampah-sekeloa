@@ -263,6 +263,13 @@ export class PencairanRepository {
             saldoTabungan: true,
           },
         },
+        petugas: {
+          select: {
+            id: true,
+            nama: true,
+            role: true,
+          },
+        },
       },
     });
   }

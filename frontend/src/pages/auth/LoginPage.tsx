@@ -40,11 +40,12 @@ export const LoginPage: React.FC = () => {
   const handleRoleTabChange = (role: 'PETUGAS' | 'WARGA') => {
     setSelectedRole(role);
     setErrorMessage(null);
-    if (!isRegisterMode) {
-      if (role === 'PETUGAS') {
-        setNomorHp('081234567890');
-        setPassword('password123');
-      } else {
+    if (role === 'PETUGAS') {
+      setIsRegisterMode(false);
+      setNomorHp('081234567890');
+      setPassword('password123');
+    } else {
+      if (!isRegisterMode) {
         setNomorHp('089876543210');
         setPassword('password123');
       }
@@ -113,14 +114,10 @@ export const LoginPage: React.FC = () => {
           <div className="mb-3">
             <AppLogo size="lg" showCheckmark={true} />
           </div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Bank Sampah Sekeloa</h1>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Sampiah</h1>
           <p className="text-xs text-gray-500 font-medium mt-1">
-            Sistem Digitalisasi Penimbangan & Tabungan RW
+            Sampah jadi Rupiah
           </p>
-          <div className="mt-2.5 inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white text-gray-600 border border-gray-200 text-xs font-semibold shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-forest-500 animate-pulse"></span>
-            <span>Pos Pelayanan RW 08 • Aktif</span>
-          </div>
         </div>
 
         {/* Dual Tab Role Selector (Admin RW vs Warga) */}
@@ -179,30 +176,27 @@ export const LoginPage: React.FC = () => {
             <span className="text-xs font-bold text-gray-800">
               {isRegisterMode ? 'Form Pendaftaran Baru' : 'Masuk ke Akun Anda'}
             </span>
-            <button
-              type="button"
-              onClick={() => {
-                const nextMode = !isRegisterMode;
-                setIsRegisterMode(nextMode);
-                setErrorMessage(null);
-                if (nextMode) {
-                  setNama('');
-                  setNomorHp('');
-                  setPassword('');
-                } else {
-                  if (selectedRole === 'PETUGAS') {
-                    setNomorHp('081234567890');
-                    setPassword('password123');
+            {selectedRole === 'WARGA' && (
+              <button
+                type="button"
+                onClick={() => {
+                  const nextMode = !isRegisterMode;
+                  setIsRegisterMode(nextMode);
+                  setErrorMessage(null);
+                  if (nextMode) {
+                    setNama('');
+                    setNomorHp('');
+                    setPassword('');
                   } else {
                     setNomorHp('089876543210');
                     setPassword('password123');
                   }
-                }
-              }}
-              className="text-xs font-bold text-forest-700 hover:text-forest-900 transition"
-            >
-              {isRegisterMode ? 'Sudah punya akun? Masuk' : 'Belum punya akun? Daftar'}
-            </button>
+                }}
+                className="text-xs font-bold text-forest-700 hover:text-forest-900 transition"
+              >
+                {isRegisterMode ? 'Sudah punya akun? Masuk' : 'Belum punya akun? Daftar'}
+              </button>
+            )}
           </div>
 
           {/* Error Alert */}
@@ -380,28 +374,6 @@ export const LoginPage: React.FC = () => {
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
-        </div>
-
-        {/* Quick KPI Stats Footer (Matching register-login-ui.png) */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="bg-white rounded-2xl p-3 border border-gray-100 flex items-center space-x-3 shadow-2xs">
-            <div className="w-10 h-10 rounded-xl bg-forest-50 text-forest-800 flex items-center justify-center flex-shrink-0">
-              <Scale className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-black text-gray-900">428.5 kg</p>
-              <p className="text-[10px] text-gray-400 font-medium">Timbangan Hari Ini</p>
-            </div>
-          </div>
-          <div className="bg-white rounded-2xl p-3 border border-gray-100 flex items-center space-x-3 shadow-2xs">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center flex-shrink-0">
-              <Wallet className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-black text-gray-900">Rp 2.15jt</p>
-              <p className="text-[10px] text-gray-400 font-medium">Kas RW Tersedia</p>
-            </div>
-          </div>
         </div>
       </div>
 

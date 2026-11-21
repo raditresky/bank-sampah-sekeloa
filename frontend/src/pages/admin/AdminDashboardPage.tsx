@@ -186,7 +186,7 @@ export const AdminDashboardPage: React.FC = () => {
         <div className="flex items-center justify-between mb-2">
           <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-forest-50 text-forest-900 border border-forest-200">
             <span className="w-2 h-2 rounded-full bg-forest-600 animate-pulse"></span>
-            <span>{summary?.pos?.namaUnit || user?.unitBankSampah || 'Unit Flamboyan 50 — RW 08 Sekeloa'}</span>
+            <span>{user?.rw ? `Pos Pelayanan ${user.rw}` : 'Pos Pelayanan RW Sekeloa'}</span>
           </span>
           <div className="p-1.5 rounded-full bg-gray-50 text-forest-700">
             <Radio className="w-4 h-4 animate-pulse" />

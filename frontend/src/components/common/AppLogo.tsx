@@ -27,7 +27,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({
       {!imageError ? (
         <img
           src={imageSrc}
-          alt="Logo Bank Sampah Sekeloa"
+          alt="Logo Sampiah"
           onError={() => setImageError(true)}
           className={`${sizeClasses[size].split(' ')[0]} ${
             sizeClasses[size].split(' ')[1]
