@@ -699,7 +699,7 @@ export const TimbanganPage: React.FC = () => {
           {totalBerat === 0 && (
             <div className="bg-forest-50/70 border border-forest-100 rounded-2xl p-3 text-center text-xs text-forest-800">
               <p className="font-semibold">
-                👆 Masukkan bobot pada salah satu jenis sampah di atas untuk memunculkan tombol simpan dan ringkasan konversi Rupiah.
+                Masukkan bobot pada salah satu jenis sampah di atas untuk memunculkan tombol simpan dan ringkasan konversi Rupiah.
               </p>
             </div>
           )}
@@ -867,7 +867,7 @@ export const TimbanganPage: React.FC = () => {
                   onClick={() => setShowConfirmModal(false)}
                   className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition"
                 >
-                  ✏️ Cek Kembali
+                  Cek Kembali
                 </button>
                 <button
                   type="button"

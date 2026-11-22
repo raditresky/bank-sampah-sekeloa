@@ -28,3 +28,67 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Format Cetak Struk Kasir / Mini Thermal Bluetooth (58mm / 80mm) & PDF */
+@media print {
+  @page {
+    size: 58mm auto;
+    margin: 0;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Sembunyikan elemen non-struk saat print */
+  header,
+  nav,
+  button,
+  .no-print,
+  #root > div > div > main > div > div:first-child,
+  #root > div > div > main > div > div.bg-emerald-100\/80,
+  #root > div > div > main > div > div.space-y-2 {
+    display: none !important;
+  }
+
+  #receipt-print-area {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 8px 6px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    color: #000000 !important;
+  }
+
+  #receipt-print-area * {
+    color: #000000 !important;
+    box-shadow: none !important;
+  }
+
+  #receipt-print-area .bg-forest-900 {
+    background-color: transparent !important;
+    border-top: 1px dashed #000000 !important;
+    border-bottom: 1px dashed #000000 !important;
+    border-radius: 0 !important;
+    padding: 6px 0 !important;
+  }
+
+  #receipt-print-area .bg-gray-50,
+  #receipt-print-area .bg-gray-50\/70,
+  #receipt-print-area .bg-gray-50\/80,
+  #receipt-print-area .bg-forest-50 {
+    background-color: transparent !important;
+    border: none !important;
+    padding: 4px 0 !important;
+  }
+
+  #receipt-print-area .border-dashed {
+    border-color: #000000 !important;
+  }
+}
+

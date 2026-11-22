@@ -708,7 +708,7 @@ export const AdminDashboardPage: React.FC = () => {
                       <div className="flex justify-between text-gray-600">
                         <span>Metode:</span>
                         <strong className="text-gray-900 font-bold">
-                          {item.metode === 'TUNAI' ? '💵 Tunai di Pos RW' : '💳 Transfer / E-Wallet'}
+                          {item.metode === 'TUNAI' ? 'Tunai di Pos RW' : 'Transfer / E-Wallet'}
                         </strong>
                       </div>
                       {item.infoRekening && (
@@ -1012,6 +1012,21 @@ export const AdminDashboardPage: React.FC = () => {
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-700"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Petugas / Admin Pendaftar
+                  </label>
+                  <div className="w-full px-3.5 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 flex items-center justify-between">
+                    <span>{user?.nama || 'Petugas RW'} ({user?.rw || 'RW 08'})</span>
+                    <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">
+                      Tercatat di Sistem
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Nama Anda otomatis tercatat di database sebagai petugas yang mendaftarkan nasabah ini.
+                  </p>
                 </div>
 
                 <div>

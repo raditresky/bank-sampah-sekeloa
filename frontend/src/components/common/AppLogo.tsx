@@ -37,13 +37,13 @@ export const AppLogo: React.FC<AppLogoProps> = ({
         <div
           className={`${sizeClasses[size]} rounded-2xl bg-forest-900 border-2 border-forest-100 flex items-center justify-center text-white font-bold shadow-sm`}
         >
-          <span className="text-forest-200 select-none">♻</span>
+          <div className="w-4 h-4 rounded-full border-2 border-forest-200"></div>
         </div>
       )}
 
       {showCheckmark && (
-        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-forest-600 text-white flex items-center justify-center border-2 border-white shadow-xs text-[10px]">
-          ✓
+        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-forest-600 text-white flex items-center justify-center border-2 border-white shadow-xs text-[10px] font-bold">
+          OK
         </div>
       )}
     </div>

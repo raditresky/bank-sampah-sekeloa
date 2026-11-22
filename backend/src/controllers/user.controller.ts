@@ -9,10 +9,16 @@ export class UserController {
   async createNasabah(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       // Pastikan role yang didaftarkan lewat admin adalah WARGA
+      // Simpan informasi admin pendaftar ke field unitBankSampah (contoh: "Didaftarkan oleh Admin: Budi (RW 08)")
+      const adminNama = req.user?.nama || 'Petugas RW';
+      const adminRw = req.user?.rw || 'RW 08';
+      const pendaftarInfo = `Didaftarkan oleh Admin: ${adminNama} (${adminRw})`;
+
       const payload = {
         ...req.body,
         role: UserRole.WARGA,
         rw: req.body.rw || req.user?.rw || 'RW 08',
+        unitBankSampah: pendaftarInfo,
       };
       const result = await authService.register(payload);
       return sendSuccess(res, result.user, 'Nasabah baru berhasil didaftarkan.', 201);

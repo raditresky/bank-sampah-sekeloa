@@ -54,28 +54,34 @@ export class KasPosService {
     const nominal = Number(input.saldoKas);
 
     // Sinkronisasi: Update kas_pos RW dan saldo_kas semua admin/petugas di RW tersebut
-    const updatedKasPos = await prisma.$transaction(async (tx) => {
-      const kasPos = await tx.kasPos.upsert({
-        where: { rw: user.rw },
-        create: {
-          rw: user.rw,
-          namaUnit: `Pos Sampiah ${user.rw}`,
-          saldoKas: new Prisma.Decimal(nominal),
-        },
-        update: {
-          saldoKas: new Prisma.Decimal(nominal),
-        },
-      });
+    const updatedKasPos = await prisma.$transaction(
+      async (tx) => {
+        const kasPos = await tx.kasPos.upsert({
+          where: { rw: user.rw },
+          create: {
+            rw: user.rw,
+            namaUnit: `Pos Sampiah ${user.rw}`,
+            saldoKas: new Prisma.Decimal(nominal),
+          },
+          update: {
+            saldoKas: new Prisma.Decimal(nominal),
+          },
+        });
 
-      await tx.user.updateMany({
-        where: { rw: user.rw, role: 'ADMIN_RW' },
-        data: {
-          saldoKas: new Prisma.Decimal(nominal),
-        },
-      });
+        await tx.user.updateMany({
+          where: { rw: user.rw, role: 'ADMIN_RW' },
+          data: {
+            saldoKas: new Prisma.Decimal(nominal),
+          },
+        });
 
-      return kasPos;
-    });
+        return kasPos;
+      },
+      {
+        maxWait: 10000,
+        timeout: 20000,
+      }
+    );
 
     return {
       id: currentUser.id,

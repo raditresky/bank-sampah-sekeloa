@@ -98,7 +98,7 @@ export const DetailTransaksiPage: React.FC = () => {
       `*Total Berat:* ${Number(transaksi.totalBerat)} Kg%0A` +
       `*Total Diterima:* Rp ${Number(transaksi.totalHarga).toLocaleString('id-ID')}%0A` +
       `*Metode:* ${transaksi.statusPembayaran === 'TABUNGAN' ? 'Masuk Tabungan' : 'Tunai Langsung'}%0A%0A` +
-      `Terima kasih telah berkontribusi memilah sampah untuk lingkungan Sekeloa yang lebih bersih! 🌿`;
+      `Terima kasih telah berkontribusi memilah sampah untuk lingkungan Sekeloa yang lebih bersih!`;
 
     const waUrl = phone
       ? `https://wa.me/${phone}?text=${message}`
@@ -139,21 +139,21 @@ export const DetailTransaksiPage: React.FC = () => {
       </div>
 
       {/* Struk Paper Card (Matching detail-transaksi-ui.png) */}
-      <div className="bg-white rounded-3xl p-5 border border-gray-200/80 shadow-md relative overflow-hidden space-y-4">
+      <div id="receipt-print-area" className="bg-white rounded-3xl p-5 border border-gray-200/80 shadow-md relative overflow-hidden space-y-4">
         {/* Header Unit */}
         <div className="text-center pt-2">
-          <div className="w-12 h-12 rounded-full bg-forest-900 text-white flex items-center justify-center mx-auto mb-2 text-xl shadow-xs">
-            ♻
+          <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center mx-auto mb-2 shadow-xs overflow-hidden border border-gray-100">
+            <img src="/logo.png" alt="Logo Sampiah" className="w-full h-full object-contain" />
           </div>
           <h3 className="font-black text-forest-950 text-base tracking-tight leading-snug">
             SAMPIAH {transaksi.rwPos ? `POS ${transaksi.rwPos}` : 'POS RW'}
           </h3>
           <p className="text-[11px] text-gray-500 font-medium mt-0.5">
-            RW 08 Kelurahan Sekeloa, Coblong, Kota Bandung
+            Sampah jadi Rupiah • Coblong, Kota Bandung
           </p>
           <div className="mt-2 inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-forest-50 border border-forest-200 text-forest-800 text-[10px] font-extrabold">
             <span className="w-1.5 h-1.5 rounded-full bg-forest-600"></span>
-            <span>BUKTI SETORAN SAH</span>
+            <span>BUKTI SETORAN RESMI</span>
           </div>
         </div>
 
@@ -314,7 +314,7 @@ export const DetailTransaksiPage: React.FC = () => {
             onClick={() => navigate('/timbangan')}
             className="text-xs font-extrabold text-forest-800 hover:text-forest-950 py-1"
           >
-            ✓ Selesai &amp; Transaksi Baru
+            Selesai &amp; Transaksi Baru
           </button>
         </div>
       </div>

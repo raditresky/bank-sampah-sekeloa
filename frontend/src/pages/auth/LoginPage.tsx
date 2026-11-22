@@ -293,7 +293,7 @@ export const LoginPage: React.FC = () => {
                 <input
                   type="tel"
                   required
-                  placeholder=""
+                  placeholder="Contoh: 81234567890"
                   value={nomorHp.replace(/^(\+62|0)/, '')}
                   onChange={(e) => {
                     let val = e.target.value.replace(/\D/g, '');
@@ -303,7 +303,7 @@ export const LoginPage: React.FC = () => {
                     val = val.replace(/^0+/, '');
                     setNomorHp(val ? '0' + val : '');
                   }}
-                  className="w-full px-3 py-2.5 bg-transparent text-xs font-semibold focus:outline-none"
+                  className="w-full px-3 py-2.5 bg-transparent text-xs font-semibold placeholder:text-gray-400 placeholder:font-normal focus:outline-none"
                 />
               </div>
             </div>
@@ -317,10 +317,10 @@ export const LoginPage: React.FC = () => {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder=""
+                  placeholder="Masukkan kata sandi / PIN"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 pr-10 bg-transparent text-xs font-medium focus:outline-none"
+                  className="w-full px-3.5 py-2.5 pr-10 bg-transparent text-xs font-medium placeholder:text-gray-400 placeholder:font-normal focus:outline-none"
                 />
                 <button
                   type="button"
