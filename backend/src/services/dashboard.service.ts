@@ -73,9 +73,27 @@ export class DashboardService {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Kas Pos RW (tersinkronisasi per RW)
+    // Kas Pos RW dihitung otomatis:
+    // Saldo Kas = Total Nilai Transaksi Setoran Sampah di RW tersebut - Total Pencairan Tabungan yang Telah Disetujui di RW tersebut
+    const totalSetoranAgg = await prisma.transaksiSampah.aggregate({
+      where: { rwPos: rw },
+      _sum: { totalHarga: true },
+    });
+    const totalSetoranRw = Number(totalSetoranAgg._sum.totalHarga || 0);
+
+    const totalPencairanAgg = await prisma.pencairanTabungan.aggregate({
+      where: {
+        rwPos: rw,
+        status: 'DISETUJUI',
+      },
+      _sum: { jumlahNominal: true },
+    });
+    const totalPencairanRw = Number(totalPencairanAgg._sum.jumlahNominal || 0);
+
+    // Saldo kas riil saat ini (tidak boleh negatif)
+    const saldoKasRw = Math.max(0, totalSetoranRw - totalPencairanRw);
+
     const kasPos = await kasPosRepository.findByRw(rw);
-    const saldoKasRw = kasPos ? Number(kasPos.saldoKas) : 0;
 
     // Transaksi hari ini di RW
     const transaksiHariIni = await prisma.transaksiSampah.findMany({

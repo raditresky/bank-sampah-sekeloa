@@ -43,13 +43,6 @@ export const AdminDashboardPage: React.FC = () => {
   const [loadingPencairan, setLoadingPencairan] = useState<boolean>(false);
   const [isPencairanModalOpen, setIsPencairanModalOpen] = useState<boolean>(false);
 
-  // Edit Saldo Kas Modal
-  const [isKasModalOpen, setIsKasModalOpen] = useState<boolean>(false);
-  const [nominalKasBaru, setNominalKasBaru] = useState<string>('');
-  const [catatanKas, setCatatanKas] = useState<string>('');
-  const [submittingKas, setSubmittingKas] = useState<boolean>(false);
-  const [kasFeedback, setKasFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
   // Modal Pendaftaran Nasabah Cepat
   const [isNasabahModalOpen, setIsNasabahModalOpen] = useState<boolean>(false);
   const [namaNasabah, setNamaNasabah] = useState<string>('');
@@ -96,13 +89,6 @@ export const AdminDashboardPage: React.FC = () => {
     } finally {
       setLoadingPencairan(false);
     }
-  };
-
-  const handleOpenKasModal = () => {
-    setIsKasModalOpen(true);
-    setKasFeedback(null);
-    setCatatanKas('');
-    setNominalKasBaru(summary?.pos?.saldoKas ? summary.pos.saldoKas.toString() : '0');
   };
 
   const handleOpenNasabahModal = () => {
@@ -159,37 +145,6 @@ export const AdminDashboardPage: React.FC = () => {
       });
     } finally {
       setSubmittingNasabah(false);
-    }
-  };
-
-  const handleUpdateSaldoKas = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const nominal = parseFloat(nominalKasBaru.replace(/\./g, '').replace(',', '.'));
-    if (isNaN(nominal) || nominal < 0) {
-      setKasFeedback({ type: 'error', message: 'Nominal tidak valid. Masukkan angka yang benar.' });
-      return;
-    }
-    setSubmittingKas(true);
-    setKasFeedback(null);
-    try {
-      const res = await kasPosApi.updateSaldoKas({
-        saldoKas: nominal,
-        catatan: catatanKas.trim() || undefined,
-      });
-      setKasFeedback({ type: 'success', message: res.message || 'Saldo kas berhasil diperbarui.' });
-      await fetchDashboardData();
-      setCatatanKas('');
-      setTimeout(() => {
-        setIsKasModalOpen(false);
-        setKasFeedback(null);
-      }, 1500);
-    } catch (err: any) {
-      setKasFeedback({
-        type: 'error',
-        message: err.response?.data?.message || err.message || 'Gagal memperbarui saldo kas.',
-      });
-    } finally {
-      setSubmittingKas(false);
     }
   };
 
@@ -361,14 +316,6 @@ export const AdminDashboardPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-gray-500">Saldo Kas Petugas</span>
             <div className="flex items-center space-x-1.5">
-              <button
-                type="button"
-                onClick={handleOpenKasModal}
-                className="p-1.5 rounded-xl bg-forest-50 text-forest-800 hover:bg-forest-100 active:scale-95 transition"
-                title="Kelola / Ubah Saldo Kas"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
               <span className="p-2 rounded-xl bg-emerald-50 text-emerald-800">
                 <Wallet className="w-4 h-4" />
               </span>
@@ -380,17 +327,12 @@ export const AdminDashboardPage: React.FC = () => {
             </p>
             <div className="flex items-center justify-between mt-1">
               <span className="text-[10px] font-semibold text-forest-700 bg-forest-50 px-2 py-0.5 rounded-full inline-block">
-                {user?.role === 'ADMIN_RW' ? 'Kas Pegangan Anda' : 'Kas Anda'}
+                Akumulasi Otomatis Transaksi Pos
               </span>
-              <button
-                type="button"
-                onClick={handleOpenKasModal}
-                className="text-[10px] font-bold text-forest-800 hover:underline flex items-center space-x-0.5"
-              >
-                <span>Ubah Saldo</span>
-                <span>&gt;</span>
-              </button>
             </div>
+            <p className="text-[10px] text-gray-400 mt-1">
+              Bertambah dari setoran nasabah &amp; berkurang saat ada pencairan yang disetujui.
+            </p>
           </div>
         </div>
       </div>
@@ -1055,155 +997,6 @@ export const AdminDashboardPage: React.FC = () => {
                       <>
                         <UserPlus className="w-3.5 h-3.5" />
                         <span>Daftarkan Warga</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL UBAH SALDO KAS SAYA */}
-      {isKasModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in">
-          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[90vh] flex flex-col shadow-2xl">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3 flex-shrink-0">
-              <div className="flex items-center space-x-2">
-                <div className="w-9 h-9 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
-                  <Wallet className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-sm text-gray-900">
-                    Ubah Saldo Kas Saya
-                  </h3>
-                  <p className="text-[11px] text-gray-500">
-                    RW {user?.rw || '08'} • Kas operasional pribadi pegangan Anda
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsKasModalOpen(false)}
-                className="p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="overflow-y-auto space-y-4 flex-1 pr-1">
-              {kasFeedback && (
-                <div
-                  className={`p-3 rounded-2xl text-xs flex items-center space-x-2 ${
-                    kasFeedback.type === 'success'
-                      ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
-                      : 'bg-red-50 border border-red-200 text-red-800'
-                  }`}
-                >
-                  {kasFeedback.type === 'success' ? (
-                    <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  )}
-                  <span>{kasFeedback.message}</span>
-                </div>
-              )}
-
-              {/* Info Kas Saat Ini */}
-              <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
-                    Kas Terdaftar Saat Ini
-                  </span>
-                  <h4 className="text-sm font-extrabold text-gray-900 mt-0.5">{user?.nama}</h4>
-                  <p className="text-[11px] text-gray-500">Admin RW {user?.rw} • {user?.nomorHp}</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-[10px] text-gray-500 block">Saldo Kas</span>
-                  <p className="text-base font-black text-forest-900">
-                    Rp {summary ? Number(summary.pos.saldoKas).toLocaleString('id-ID') : '0'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Form Input Saldo Baru */}
-              <form onSubmit={handleUpdateSaldoKas} className="space-y-3 pt-1">
-                <div>
-                  <label className="block text-xs font-bold text-gray-800 mb-1">
-                    Nominal Saldo Kas Baru (Rp)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-xs font-extrabold text-gray-400">
-                      Rp
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="1000"
-                      value={nominalKasBaru}
-                      onChange={(e) => setNominalKasBaru(e.target.value)}
-                      placeholder="Contoh: 1500000"
-                      className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-extrabold text-gray-900 focus:outline-none focus:ring-2 focus:ring-forest-800"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Quick Presets */}
-                <div className="space-y-1">
-                  <span className="text-[10px] text-gray-400 font-medium">Pilihan Nominal Cepat:</span>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {[500000, 1000000, 2000000, 3000000].map((nominal) => (
-                      <button
-                        key={nominal}
-                        type="button"
-                        onClick={() => setNominalKasBaru(nominal.toString())}
-                        className="py-1 px-1.5 rounded-lg border border-gray-200 text-[10px] font-bold text-gray-700 bg-gray-50 hover:bg-forest-50 hover:border-forest-300 hover:text-forest-800 active:scale-95 transition truncate"
-                      >
-                        {(nominal / 1000).toLocaleString('id-ID')} rb
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Catatan / Alasan Perubahan (Opsional)
-                  </label>
-                  <input
-                    type="text"
-                    value={catatanKas}
-                    onChange={(e) => setCatatanKas(e.target.value)}
-                    placeholder="Contoh: Tambahan modal awal / Penyesuaian fisik kas"
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-forest-800"
-                  />
-                </div>
-
-                <div className="flex space-x-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsKasModalOpen(false)}
-                    className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submittingKas}
-                    className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-forest-900 hover:bg-forest-800 shadow-md transition disabled:opacity-50 flex items-center justify-center space-x-1.5"
-                  >
-                    {submittingKas ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Menyimpan...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Simpan Saldo</span>
                       </>
                     )}
                   </button>

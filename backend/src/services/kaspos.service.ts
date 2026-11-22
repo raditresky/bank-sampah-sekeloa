@@ -22,11 +22,23 @@ export class KasPosService {
       return [];
     }
 
-    const kasPos = await prisma.kasPos.findUnique({
-      where: { rw: user.rw },
+    // Saldo kas otomatis dihitung dari akumulasi transaksi setoran dikurangi pencairan yang disetujui di RW
+    const totalSetoranAgg = await prisma.transaksiSampah.aggregate({
+      where: { rwPos: user.rw },
+      _sum: { totalHarga: true },
     });
+    const totalSetoranRw = Number(totalSetoranAgg._sum.totalHarga || 0);
 
-    const saldoKasRw = kasPos ? Number(kasPos.saldoKas) : 0;
+    const totalPencairanAgg = await prisma.pencairanTabungan.aggregate({
+      where: {
+        rwPos: user.rw,
+        status: 'DISETUJUI',
+      },
+      _sum: { jumlahNominal: true },
+    });
+    const totalPencairanRw = Number(totalPencairanAgg._sum.jumlahNominal || 0);
+
+    const saldoKasRw = Math.max(0, totalSetoranRw - totalPencairanRw);
 
     return [
       {
@@ -42,56 +54,7 @@ export class KasPosService {
   }
 
   async updateSaldoKas(currentUser: JwtPayload, input: UpdateSaldoKasInput) {
-    const user = await prisma.user.findUnique({
-      where: { id: currentUser.id },
-      select: { rw: true, nama: true, nomorHp: true, role: true },
-    });
-
-    if (!user) {
-      throw new Error('User tidak ditemukan.');
-    }
-
-    const nominal = Number(input.saldoKas);
-
-    // Sinkronisasi: Update kas_pos RW dan saldo_kas semua admin/petugas di RW tersebut
-    const updatedKasPos = await prisma.$transaction(
-      async (tx) => {
-        const kasPos = await tx.kasPos.upsert({
-          where: { rw: user.rw },
-          create: {
-            rw: user.rw,
-            namaUnit: `Pos Sampiah ${user.rw}`,
-            saldoKas: new Prisma.Decimal(nominal),
-          },
-          update: {
-            saldoKas: new Prisma.Decimal(nominal),
-          },
-        });
-
-        await tx.user.updateMany({
-          where: { rw: user.rw, role: 'ADMIN_RW' },
-          data: {
-            saldoKas: new Prisma.Decimal(nominal),
-          },
-        });
-
-        return kasPos;
-      },
-      {
-        maxWait: 10000,
-        timeout: 20000,
-      }
-    );
-
-    return {
-      id: currentUser.id,
-      nama: user.nama,
-      nomorHp: user.nomorHp,
-      role: user.role,
-      rw: user.rw,
-      saldoKas: Number(updatedKasPos.saldoKas),
-      updatedAt: updatedKasPos.updatedAt,
-    };
+    throw new Error('Saldo kas dihitung otomatis dari akumulasi transaksi nasabah dan pencairan per RW, sehingga tidak dapat diubah manual.');
   }
 }
 
