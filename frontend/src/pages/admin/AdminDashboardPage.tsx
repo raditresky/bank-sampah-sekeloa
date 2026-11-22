@@ -330,9 +330,6 @@ export const AdminDashboardPage: React.FC = () => {
                 Akumulasi Otomatis Transaksi Pos
               </span>
             </div>
-            <p className="text-[10px] text-gray-400 mt-1">
-              Bertambah dari setoran nasabah &amp; berkurang saat ada pencairan yang disetujui.
-            </p>
           </div>
         </div>
       </div>
