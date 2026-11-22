@@ -504,14 +504,16 @@ export const RiwayatPage: React.FC = () => {
             {isAdmin ? `Seluruh setoran & pencairan di ${user?.rw}` : 'Catatan setoran sampah & pencairan saldo'}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleExportSpreadsheet}
-          className="flex items-center space-x-1.5 px-3 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-xs active:scale-95 transition"
-        >
-          <FileSpreadsheet className="w-4 h-4" />
-          <span>Unduh Spreadsheet</span>
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={handleExportSpreadsheet}
+            className="flex items-center space-x-1.5 px-3 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-xs active:scale-95 transition"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>Unduh Spreadsheet</span>
+          </button>
+        )}
       </div>
 
       {/* Filter Tabs */}
