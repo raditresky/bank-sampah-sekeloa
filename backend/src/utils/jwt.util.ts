@@ -7,6 +7,7 @@ export interface JwtPayload {
   nomorHp: string;
   role: UserRole;
   rw: string;
+  nama?: string;
   unitBankSampah?: string | null;
 }
 

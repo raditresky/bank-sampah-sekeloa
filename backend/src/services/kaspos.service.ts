@@ -1,4 +1,5 @@
 import { prisma } from '../config/prisma';
+import { kasPosRepository } from '../repositories/kaspos.repository';
 import { JwtPayload } from '../utils/jwt.util';
 import { Prisma } from '@prisma/client';
 import { UpdateSaldoKasInput } from '../validations/kaspos.validation';
@@ -39,21 +40,22 @@ export class KasPosService {
     const totalPencairanRw = Number(totalPencairanAgg._sum.jumlahNominal || 0);
 
     const saldoKasRw = Math.max(0, totalSetoranRw - totalPencairanRw);
+    const kasPos = await kasPosRepository.findByRw(user.rw);
 
     return [
       {
         id: user.id,
-        nama: user.nama,
+        nama: user.rw,
         nomorHp: user.nomorHp,
         role: user.role,
         rw: user.rw,
         saldoKas: saldoKasRw,
-        updatedAt: kasPos?.updatedAt || user.updatedAt,
+        updatedAt: kasPos?.updatedAt || new Date(),
       },
     ];
   }
 
-  async updateSaldoKas(currentUser: JwtPayload, input: UpdateSaldoKasInput) {
+  async updateSaldoKas(currentUser: JwtPayload, input: UpdateSaldoKasInput): Promise<any> {
     throw new Error('Saldo kas dihitung otomatis dari akumulasi transaksi nasabah dan pencairan per RW, sehingga tidak dapat diubah manual.');
   }
 }

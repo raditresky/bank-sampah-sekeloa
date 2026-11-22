@@ -21,7 +21,36 @@ export class DashboardService {
       throw error;
     }
 
-    // Agregasi transaksi warga
+    // 1. Hitung total tabungan dari setoran sampah bertipe TABUNGAN
+    const setoranTabunganAgg = await prisma.transaksiSampah.aggregate({
+      where: {
+        userId,
+        statusPembayaran: 'TABUNGAN',
+      },
+      _sum: {
+        totalHarga: true,
+      },
+    });
+    const totalSetoranTabungan = Number(setoranTabunganAgg._sum.totalHarga || 0);
+
+    // 2. Hitung total pencairan tabungan yang telah DISETUJUI
+    const pencairanAgg = await prisma.pencairanTabungan.aggregate({
+      where: {
+        userId,
+        status: 'DISETUJUI',
+      },
+      _sum: {
+        jumlahNominal: true,
+      },
+    });
+    const totalPencairanDisetujui = Number(pencairanAgg._sum.jumlahNominal || 0);
+
+    // Saldo tabungan riil: akumulasi setoran tabungan - pencairan disetujui (minimal 0)
+    // Ditambahkan dengan nilai saldoTabungan manual jika ada saldo awal
+    const saldoTabunganDihitung = Math.max(0, totalSetoranTabungan - totalPencairanDisetujui);
+    const saldoTabunganAkhir = saldoTabunganDihitung > 0 ? saldoTabunganDihitung : Number(warga.saldoTabungan || 0);
+
+    // Agregasi seluruh transaksi warga (berat & nilai disetor)
     const agregasi = await prisma.transaksiSampah.aggregate({
       where: { userId },
       _sum: {
@@ -54,7 +83,7 @@ export class DashboardService {
         nomorHp: warga.nomorHp,
         rw: warga.rw,
         rt: warga.rt,
-        saldoTabungan: Number(warga.saldoTabungan),
+        saldoTabungan: saldoTabunganAkhir,
       },
       statistik: {
         totalBeratDisetor: Number(agregasi._sum.totalBerat || 0),
