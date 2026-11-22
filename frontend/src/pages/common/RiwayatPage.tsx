@@ -20,6 +20,8 @@ import {
   CreditCard,
   Building2,
   UserCheck,
+  FileSpreadsheet,
+  Download,
 } from 'lucide-react';
 
 type HistoryFilter = 'ALL' | 'SETORAN' | 'PENCAIRAN';
@@ -138,6 +140,107 @@ export const RiwayatPage: React.FC = () => {
     return true;
   });
 
+  // Ekspor Data Terfilter ke File Spreadsheet (CSV)
+  const handleExportSpreadsheet = () => {
+    if (filteredItems.length === 0) {
+      alert('Tidak ada data riwayat pada periode ini untuk diekspor.');
+      return;
+    }
+
+    // Header Kolom CSV
+    const headers = [
+      'No',
+      'Tanggal & Waktu',
+      'Jenis Aktivitas',
+      'No Referensi / Transaksi',
+      'Nama Nasabah / Warga',
+      'Kode Nasabah',
+      'Wilayah RW',
+      'Total Berat (Kg)',
+      'Total Nominal (Rp)',
+      'Metode / Status',
+      'Rincian Sampah / Catatan',
+    ];
+
+    const escapeCsv = (val: any) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const rows = filteredItems.map((item, idx) => {
+      const dateStr = item.date.toLocaleString('id-ID', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      if (item.kind === 'TRANSAKSI') {
+        const trx = item.data;
+        const rincian = (trx.items || [])
+          .map(
+            (it) =>
+              `${it.sampah?.nama || 'Sampah'}: ${it.kuantitas} Kg (@Rp ${it.hargaSatuan}) = Rp ${it.subtotal}`
+          )
+          .join('; ');
+
+        return [
+          idx + 1,
+          dateStr,
+          'Setoran Sampah',
+          trx.nomorTransaksi,
+          trx.warga?.nama || '-',
+          trx.warga?.kodeNasabah || '-',
+          trx.rwPos,
+          trx.totalBerat,
+          trx.totalHarga,
+          trx.statusPembayaran,
+          rincian || '-',
+        ].map(escapeCsv).join(',');
+      } else {
+        const pnc = item.data;
+        return [
+          idx + 1,
+          dateStr,
+          'Pencairan Saldo',
+          pnc.nomorPencairan,
+          pnc.warga?.nama || '-',
+          pnc.warga?.kodeNasabah || '-',
+          pnc.rwPos,
+          '-',
+          pnc.jumlahNominal,
+          `${pnc.metode} (${pnc.status})`,
+          pnc.catatan || pnc.infoRekening || '-',
+        ].map(escapeCsv).join(',');
+      }
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+
+    const timeLabel =
+      timeFilter === 'TODAY'
+        ? 'hari_ini'
+        : timeFilter === 'WEEK'
+        ? '1_minggu'
+        : timeFilter === 'MONTH'
+        ? '1_bulan'
+        : timeFilter === 'CUSTOM'
+        ? `${startDate || 'awal'}_sd_${endDate || 'akhir'}`
+        : 'semua_waktu';
+
+    link.setAttribute('download', `rekap_riwayat_sampiah_${timeLabel}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="pb-24 pt-2 px-4 space-y-3.5">
       {/* Title */}
@@ -148,6 +251,14 @@ export const RiwayatPage: React.FC = () => {
             {isAdmin ? `Seluruh setoran & pencairan di ${user?.rw}` : 'Catatan setoran sampah & pencairan saldo'}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={handleExportSpreadsheet}
+          className="flex items-center space-x-1.5 px-3 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-xs active:scale-95 transition"
+        >
+          <FileSpreadsheet className="w-4 h-4" />
+          <span>Unduh Spreadsheet</span>
+        </button>
       </div>
 
       {/* Filter Tabs */}
