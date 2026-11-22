@@ -1,3 +1,4 @@
+import { prisma } from '../config/prisma';
 import { pencairanRepository } from '../repositories/pencairan.repository';
 import { userRepository } from '../repositories/user.repository';
 import { CreatePencairanInput } from '../validations/pencairan.validation';
@@ -14,7 +15,32 @@ export class PencairanService {
     }
 
     const nominal = Number(input.jumlahNominal);
-    const saldo = Number(dbUser.saldoTabungan);
+
+    // Hitung saldo tabungan riil nasabah saat ini (Setoran TABUNGAN - Pencairan DISETUJUI)
+    const setoranTabunganAgg = await prisma.transaksiSampah.aggregate({
+      where: {
+        userId: user.id,
+        statusPembayaran: 'TABUNGAN',
+      },
+      _sum: {
+        totalHarga: true,
+      },
+    });
+    const totalSetoranTabungan = Number(setoranTabunganAgg._sum.totalHarga || 0);
+
+    const pencairanAgg = await prisma.pencairanTabungan.aggregate({
+      where: {
+        userId: user.id,
+        status: 'DISETUJUI',
+      },
+      _sum: {
+        jumlahNominal: true,
+      },
+    });
+    const totalPencairanDisetujui = Number(pencairanAgg._sum.jumlahNominal || 0);
+
+    const saldoDihitung = Math.max(0, totalSetoranTabungan - totalPencairanDisetujui);
+    const saldo = saldoDihitung > 0 ? saldoDihitung : Number(dbUser.saldoTabungan);
 
     if (saldo < nominal) {
       const error: any = new Error(

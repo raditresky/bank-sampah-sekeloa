@@ -158,7 +158,32 @@ export class PencairanRepository {
         }
 
         const nominal = Number(pencairan.jumlahNominal);
-        const saldoSaatIni = Number(pencairan.warga.saldoTabungan);
+
+        // Hitung saldo tabungan riil nasabah saat ini
+        const setoranTabunganAgg = await tx.transaksiSampah.aggregate({
+          where: {
+            userId: pencairan.userId,
+            statusPembayaran: 'TABUNGAN',
+          },
+          _sum: {
+            totalHarga: true,
+          },
+        });
+        const totalSetoranTabungan = Number(setoranTabunganAgg._sum.totalHarga || 0);
+
+        const pencairanAgg = await tx.pencairanTabungan.aggregate({
+          where: {
+            userId: pencairan.userId,
+            status: 'DISETUJUI',
+          },
+          _sum: {
+            jumlahNominal: true,
+          },
+        });
+        const totalPencairanDisetujui = Number(pencairanAgg._sum.jumlahNominal || 0);
+
+        const saldoDihitung = Math.max(0, totalSetoranTabungan - totalPencairanDisetujui);
+        const saldoSaatIni = saldoDihitung > 0 ? saldoDihitung : Number(pencairan.warga.saldoTabungan);
 
         if (saldoSaatIni < nominal) {
           throw new Error(
@@ -168,7 +193,7 @@ export class PencairanRepository {
           );
         }
 
-        // 1. Kurangi saldo tabungan warga
+        // 1. Kurangi saldo tabungan warga di tabel users agar tetap sinkron
         const updatedWarga = await tx.user.update({
           where: { id: pencairan.userId },
           data: {
