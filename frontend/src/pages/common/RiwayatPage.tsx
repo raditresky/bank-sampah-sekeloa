@@ -140,36 +140,267 @@ export const RiwayatPage: React.FC = () => {
     return true;
   });
 
-  // Ekspor Data Terfilter ke File Spreadsheet (CSV)
+  // Ekspor Data Terfilter ke File Spreadsheet Excel XML yang Rapi & Berwarna
   const handleExportSpreadsheet = () => {
     if (filteredItems.length === 0) {
       alert('Tidak ada data riwayat pada periode ini untuk diekspor.');
       return;
     }
 
-    // Header Kolom CSV
-    const headers = [
-      'No',
-      'Tanggal & Waktu',
-      'Jenis Aktivitas',
-      'No Referensi / Transaksi',
-      'Nama Nasabah / Warga',
-      'Kode Nasabah',
-      'Wilayah RW',
-      'Total Berat (Kg)',
-      'Total Nominal (Rp)',
-      'Metode / Status',
-      'Admin / Petugas Bertugas',
-      'Rincian Sampah / Catatan',
-    ];
+    const timeLabel =
+      timeFilter === 'TODAY'
+        ? 'Hari Ini'
+        : timeFilter === 'WEEK'
+        ? '1 Minggu Terakhir'
+        : timeFilter === 'MONTH'
+        ? '1 Bulan Terakhir'
+        : timeFilter === 'CUSTOM'
+        ? `Periode ${startDate || 'Awal'} s/d ${endDate || 'Akhir'}`
+        : 'Semua Waktu';
 
-    const escapeCsv = (val: any) => {
-      if (val === null || val === undefined) return '""';
-      const str = String(val).replace(/"/g, '""');
-      return `"${str}"`;
+    const fileDateSlug =
+      timeFilter === 'TODAY'
+        ? 'hari_ini'
+        : timeFilter === 'WEEK'
+        ? '1_minggu'
+        : timeFilter === 'MONTH'
+        ? '1_bulan'
+        : timeFilter === 'CUSTOM'
+        ? `${startDate || 'awal'}_sd_${endDate || 'akhir'}`
+        : 'semua_waktu';
+
+    // Hitung ringkasan akumulasi
+    let totalKgSetoran = 0;
+    let totalNominalSetoran = 0;
+    let totalNominalPencairan = 0;
+
+    filteredItems.forEach((item) => {
+      if (item.kind === 'TRANSAKSI') {
+        totalKgSetoran += parseFloat(String(item.data.totalBerat)) || 0;
+        totalNominalSetoran += parseFloat(String(item.data.totalHarga)) || 0;
+      } else {
+        totalNominalPencairan += parseFloat(String(item.data.jumlahNominal)) || 0;
+      }
+    });
+
+    const escapeXml = (str: any) => {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
     };
 
-    const rows = filteredItems.map((item, idx) => {
+    // Format Excel Spreadsheet XML 2003 (Membuka langsung di Excel dengan styling warna, border, dan formula angka)
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Borders/>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#000000"/>
+   <Interior/>
+   <NumberFormat/>
+   <Protection/>
+  </Style>
+  <!-- Judul Utama -->
+  <Style ss:ID="Title">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="16" ss:Bold="1" ss:Color="#1B4D3E"/>
+  </Style>
+  <!-- Sub Judul -->
+  <Style ss:ID="Subtitle">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Italic="1" ss:Color="#555555"/>
+  </Style>
+  <!-- Summary Box Labels -->
+  <Style ss:ID="SummaryLabel">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#333333"/>
+   <Interior ss:Color="#EAEAEA" ss:Pattern="Solid"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="SummaryValue">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#1B4D3E"/>
+   <Interior ss:Color="#F4F9F6" ss:Pattern="Solid"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+   </Borders>
+  </Style>
+  <!-- Table Header -->
+  <Style ss:ID="Header">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#113329"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#113329"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#1B4D3E"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#1B4D3E"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#1B4D3E" ss:Pattern="Solid"/>
+  </Style>
+  <!-- Data Styles -->
+  <Style ss:ID="DataCenter">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="DataLeft">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="DataSetoran">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#047857"/>
+   <Interior ss:Color="#ECFDF5" ss:Pattern="Solid"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="DataPencairan">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#B45309"/>
+   <Interior ss:Color="#FFFBEB" ss:Pattern="Solid"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="DataNumber">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <NumberFormat ss:Format="#,##0.00"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="DataCurrency">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <NumberFormat ss:Format="&quot;Rp &quot;#,##0"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+   </Borders>
+  </Style>
+  <!-- Total Row -->
+  <Style ss:ID="TotalLabel">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#000000"/>
+   <Interior ss:Color="#E5E7EB" ss:Pattern="Solid"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Double" ss:Weight="3" ss:Color="#113329"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#113329"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="TotalValue">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#1B4D3E"/>
+   <NumberFormat ss:Format="&quot;Rp &quot;#,##0"/>
+   <Interior ss:Color="#E5E7EB" ss:Pattern="Solid"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Double" ss:Weight="3" ss:Color="#113329"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#113329"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="TotalKg">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#1B4D3E"/>
+   <NumberFormat ss:Format="#,##0.00&quot; Kg&quot;"/>
+   <Interior ss:Color="#E5E7EB" ss:Pattern="Solid"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Double" ss:Weight="3" ss:Color="#113329"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#113329"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/>
+   </Borders>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Rekap Aktivitas">
+  <Table ss:DefaultRowHeight="20">
+   <Column ss:Width="35"/>  <!-- No -->
+   <Column ss:Width="110"/> <!-- Tanggal & Waktu -->
+   <Column ss:Width="105"/> <!-- Jenis Aktivitas -->
+   <Column ss:Width="130"/> <!-- No Referensi -->
+   <Column ss:Width="130"/> <!-- Nama Warga -->
+   <Column ss:Width="95"/>  <!-- Kode Nasabah -->
+   <Column ss:Width="60"/>  <!-- RW -->
+   <Column ss:Width="80"/>  <!-- Total Bobot -->
+   <Column ss:Width="110"/> <!-- Total Nominal -->
+   <Column ss:Width="115"/> <!-- Status / Metode -->
+   <Column ss:Width="125"/> <!-- Admin / Petugas -->
+   <Column ss:Width="250"/> <!-- Rincian Sampah / Catatan -->
+
+   <!-- Header Title & Branding -->
+   <Row ss:Height="26">
+    <Cell ss:MergeAcross="11" ss:StyleID="Title"><Data ss:Type="String">SAMPIAH - LAPORAN REKAPITULASI AKTIVITAS</Data></Cell>
+   </Row>
+   <Row ss:Height="18">
+    <Cell ss:MergeAcross="11" ss:StyleID="Subtitle"><Data ss:Type="String">Unit Bank Sampah ${escapeXml(user?.rw || 'Kelurahan Sekeloa')} • Periode: ${escapeXml(timeLabel)} • Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</Data></Cell>
+   </Row>
+   <Row ss:Height="10"></Row>
+
+   <!-- Summary Box Mini -->
+   <Row ss:Height="20">
+    <Cell ss:MergeAcross="1" ss:StyleID="SummaryLabel"><Data ss:Type="String">Total Volume Setoran</Data></Cell>
+    <Cell ss:StyleID="SummaryValue"><Data ss:Type="String">${totalKgSetoran.toLocaleString('id-ID')} Kg</Data></Cell>
+    <Cell ss:Index="5" ss:MergeAcross="1" ss:StyleID="SummaryLabel"><Data ss:Type="String">Total Nilai Sampah Warga</Data></Cell>
+    <Cell ss:StyleID="SummaryValue"><Data ss:Type="String">Rp ${totalNominalSetoran.toLocaleString('id-ID')}</Data></Cell>
+    <Cell ss:Index="9" ss:MergeAcross="1" ss:StyleID="SummaryLabel"><Data ss:Type="String">Total Pencairan Tabungan</Data></Cell>
+    <Cell ss:StyleID="SummaryValue"><Data ss:Type="String">Rp ${totalNominalPencairan.toLocaleString('id-ID')}</Data></Cell>
+   </Row>
+   <Row ss:Height="12"></Row>
+
+   <!-- Main Table Column Headers -->
+   <Row ss:Height="28">
+    <Cell ss:StyleID="Header"><Data ss:Type="String">No</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Tanggal &amp; Waktu</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Jenis Aktivitas</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">No Referensi</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Nama Nasabah</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Kode Nasabah</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Pos RW</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Total Bobot (Kg)</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Total Nilai (Rp)</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Metode / Status</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Admin / Petugas</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Rincian Sampah / Catatan</Data></Cell>
+   </Row>
+`;
+
+    // Data Baris
+    filteredItems.forEach((item, idx) => {
       const dateStr = item.date.toLocaleString('id-ID', {
         day: '2-digit',
         month: '2-digit',
@@ -183,63 +414,80 @@ export const RiwayatPage: React.FC = () => {
         const rincian = (trx.items || [])
           .map(
             (it) =>
-              `${it.sampah?.nama || 'Sampah'}: ${it.kuantitas} Kg (@Rp ${it.hargaSatuan}) = Rp ${it.subtotal}`
+              `${it.sampah?.nama || 'Sampah'} (${it.kuantitas} Kg × Rp ${Number(it.hargaSatuan).toLocaleString('id-ID')} = Rp ${Number(it.subtotal).toLocaleString('id-ID')})`
           )
           .join('; ');
 
-        return [
-          idx + 1,
-          dateStr,
-          'Setoran Sampah',
-          trx.nomorTransaksi,
-          trx.warga?.nama || '-',
-          trx.warga?.kodeNasabah || '-',
-          trx.rwPos,
-          trx.totalBerat,
-          trx.totalHarga,
-          trx.statusPembayaran,
-          trx.petugas?.nama || 'Petugas RW',
-          rincian || '-',
-        ].map(escapeCsv).join(',');
+        xml += `   <Row ss:Height="22">
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="Number">${idx + 1}</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">${escapeXml(dateStr)}</Data></Cell>
+    <Cell ss:StyleID="DataSetoran"><Data ss:Type="String">Setoran Sampah</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String">${escapeXml(trx.nomorTransaksi)}</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String">${escapeXml(trx.warga?.nama || '-')}</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">${escapeXml(trx.warga?.kodeNasabah || '-')}</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">${escapeXml(trx.rwPos)}</Data></Cell>
+    <Cell ss:StyleID="DataNumber"><Data ss:Type="Number">${parseFloat(String(trx.totalBerat)) || 0}</Data></Cell>
+    <Cell ss:StyleID="DataCurrency"><Data ss:Type="Number">${parseFloat(String(trx.totalHarga)) || 0}</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">${escapeXml(trx.statusPembayaran)}</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String">${escapeXml(trx.petugas?.nama || 'Petugas RW')}</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String">${escapeXml(rincian || '-')}</Data></Cell>
+   </Row>\n`;
       } else {
         const pnc = item.data;
         const namaAdminPencair = pnc.petugas?.nama || (pnc.status === 'DISETUJUI' ? 'Admin RW' : '-');
 
-        return [
-          idx + 1,
-          dateStr,
-          'Pencairan Saldo',
-          pnc.nomorPencairan,
-          pnc.warga?.nama || '-',
-          pnc.warga?.kodeNasabah || '-',
-          pnc.rwPos,
-          '-',
-          pnc.jumlahNominal,
-          `${pnc.metode} (${pnc.status})`,
-          namaAdminPencair,
-          pnc.catatan || pnc.infoRekening || '-',
-        ].map(escapeCsv).join(',');
+        xml += `   <Row ss:Height="22">
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="Number">${idx + 1}</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">${escapeXml(dateStr)}</Data></Cell>
+    <Cell ss:StyleID="DataPencairan"><Data ss:Type="String">Pencairan Saldo</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String">${escapeXml(pnc.nomorPencairan)}</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String">${escapeXml(pnc.warga?.nama || '-')}</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">${escapeXml(pnc.warga?.kodeNasabah || '-')}</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">${escapeXml(pnc.rwPos)}</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">-</Data></Cell>
+    <Cell ss:StyleID="DataCurrency"><Data ss:Type="Number">${parseFloat(String(pnc.jumlahNominal)) || 0}</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">${escapeXml(`${pnc.metode} (${pnc.status})`)}</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String">${escapeXml(namaAdminPencair)}</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String">${escapeXml(pnc.catatan || pnc.infoRekening || '-')}</Data></Cell>
+   </Row>\n`;
       }
     });
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Baris Total di paling bawah
+    xml += `   <Row ss:Height="24">
+    <Cell ss:MergeAcross="6" ss:StyleID="TotalLabel"><Data ss:Type="String">TOTAL KESELURUHAN:</Data></Cell>
+    <Cell ss:StyleID="TotalKg"><Data ss:Type="Number">${totalKgSetoran}</Data></Cell>
+    <Cell ss:StyleID="TotalValue"><Data ss:Type="Number">${totalNominalSetoran}</Data></Cell>
+    <Cell ss:MergeAcross="2" ss:StyleID="TotalLabel"><Data ss:Type="String"></Data></Cell>
+   </Row>
+  </Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <Selected/>
+   <FreezePanes/>
+   <FrozenNoSplit/>
+   <SplitHorizontal>7</SplitHorizontal>
+   <TopRowBottomPane>7</TopRowBottomPane>
+   <ActivePane>2</ActivePane>
+   <Panes>
+    <Pane>
+     <Number>3</Number>
+    </Pane>
+    <Pane>
+     <Number>2</Number>
+     <ActiveRow>7</ActiveRow>
+    </Pane>
+   </Panes>
+   <ProtectObjects>False</ProtectObjects>
+   <ProtectScenarios>False</ProtectScenarios>
+  </WorksheetOptions>
+ </Worksheet>
+</Workbook>`;
+
+    const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-
-    const timeLabel =
-      timeFilter === 'TODAY'
-        ? 'hari_ini'
-        : timeFilter === 'WEEK'
-        ? '1_minggu'
-        : timeFilter === 'MONTH'
-        ? '1_bulan'
-        : timeFilter === 'CUSTOM'
-        ? `${startDate || 'awal'}_sd_${endDate || 'akhir'}`
-        : 'semua_waktu';
-
-    link.setAttribute('download', `rekap_riwayat_sampiah_${timeLabel}.csv`);
+    link.setAttribute('download', `rekap_riwayat_sampiah_${fileDateSlug}.xls`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
