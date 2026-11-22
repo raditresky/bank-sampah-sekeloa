@@ -24,14 +24,18 @@ export const LoginPage: React.FC = () => {
   // Sub-mode: Masuk (Login) vs Daftar Baru (Register)
   const [isRegisterMode, setIsRegisterMode] = useState<boolean>(false);
 
-  // Form State
-  const [nomorHp, setNomorHp] = useState<string>('081234567890');
-  const [password, setPassword] = useState<string>('password123');
+  // Form State - Dimulai dengan string kosong agar user tidak perlu menghapus nilai awal
+  const [nomorHp, setNomorHp] = useState<string>(() => {
+    return localStorage.getItem('savedNomorHp') || '';
+  });
+  const [password, setPassword] = useState<string>('');
   const [nama, setNama] = useState<string>('');
   const [rw, setRw] = useState<string>('RW 08');
   const [rt, setRt] = useState<string>('RT 01');
-  const [kodeAksesPengurus, setKodeAksesPengurus] = useState<string>('SEKELOA_JUARA_2026');
-  const [rememberMe, setRememberMe] = useState<boolean>(true);
+  const [kodeAksesPengurus, setKodeAksesPengurus] = useState<string>('');
+  const [rememberMe, setRememberMe] = useState<boolean>(() => {
+    return localStorage.getItem('rememberMe') !== 'false';
+  });
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const [loading, setLoading] = useState<boolean>(false);
@@ -42,13 +46,6 @@ export const LoginPage: React.FC = () => {
     setErrorMessage(null);
     if (role === 'PETUGAS') {
       setIsRegisterMode(false);
-      setNomorHp('081234567890');
-      setPassword('password123');
-    } else {
-      if (!isRegisterMode) {
-        setNomorHp('089876543210');
-        setPassword('password123');
-      }
     }
   };
 
@@ -81,12 +78,12 @@ export const LoginPage: React.FC = () => {
           unitBankSampah: selectedRole === 'PETUGAS' ? `Unit Pos ${rw}` : undefined,
           role: assignedRole,
           kodeAksesPengurus: selectedRole === 'PETUGAS' ? kodeAksesPengurus : undefined,
-        });
+        }, rememberMe);
       } else {
         await login({
           nomorHp: cleanNomorHp,
           password,
-        });
+        }, rememberMe);
       }
 
       navigate('/');
@@ -288,7 +285,6 @@ export const LoginPage: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-bold text-gray-700">Nomor WhatsApp / HP</label>
-                <span className="text-[10px] text-gray-400">Format: 08...</span>
               </div>
               <div className="flex rounded-xl border border-gray-200 bg-gray-50 focus-within:ring-2 focus-within:ring-forest-900 focus-within:bg-white transition overflow-hidden">
                 <span className="px-3 py-2.5 bg-gray-100 text-gray-500 font-bold text-xs border-r border-gray-200 flex items-center">
@@ -297,7 +293,7 @@ export const LoginPage: React.FC = () => {
                 <input
                   type="tel"
                   required
-                  placeholder="812-3456-7890"
+                  placeholder=""
                   value={nomorHp.replace(/^(\+62|0)/, '')}
                   onChange={(e) => {
                     let val = e.target.value.replace(/\D/g, '');
@@ -321,7 +317,7 @@ export const LoginPage: React.FC = () => {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder="Masukkan minimal 6 karakter"
+                  placeholder=""
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-3.5 py-2.5 pr-10 bg-transparent text-xs font-medium focus:outline-none"
@@ -382,7 +378,6 @@ export const LoginPage: React.FC = () => {
         <p className="font-semibold text-gray-500">
           Didukung oleh Kelurahan Sekeloa & DLH Kota Bandung
         </p>
-        <p className="mt-0.5">PWA Version 1.0 (React + TypeScript + Express + MySQL)</p>
       </footer>
     </div>
   );

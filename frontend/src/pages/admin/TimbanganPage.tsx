@@ -51,6 +51,7 @@ export const TimbanganPage: React.FC = () => {
   // Submit State
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
 
   // Cek apakah ada query param wargaId
   useEffect(() => {
@@ -246,6 +247,7 @@ export const TimbanganPage: React.FC = () => {
       return;
     }
 
+    setShowConfirmModal(false);
     setSubmitting(true);
     const clientOfflineId = crypto.randomUUID();
 
@@ -754,7 +756,7 @@ export const TimbanganPage: React.FC = () => {
                 {/* Submit Action Button */}
                 <button
                   type="button"
-                  onClick={handleSubmitTransaksi}
+                  onClick={() => setShowConfirmModal(true)}
                   disabled={submitting}
                   className="w-full py-3.5 bg-forest-900 hover:bg-forest-950 text-white font-extrabold text-sm rounded-2xl shadow-md flex items-center justify-center space-x-2 transition disabled:opacity-50 active:scale-[0.98]"
                 >
@@ -770,6 +772,109 @@ export const TimbanganPage: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Validasi Penimbangan */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in">
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[90vh] flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 rounded-xl bg-forest-50 text-forest-800">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-gray-900">Konfirmasi Penimbangan</h3>
+                  <p className="text-[11px] text-gray-500">Pastikan seluruh data sampah sudah sesuai</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto space-y-3">
+              {/* Info Nasabah */}
+              <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Nasabah:</span>
+                  <span className="font-bold text-gray-900">{warga?.nama}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Kode Nasabah:</span>
+                  <span className="font-mono font-bold text-forest-800">{warga?.kodeNasabah}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Metode:</span>
+                  <span className="font-bold text-gray-900">
+                    {metodePembayaran === 'TABUNGAN' ? 'Masuk Tabungan Warga' : 'Tunai Langsung (Kas Pos)'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Rincian Item */}
+              <div>
+                <p className="text-xs font-bold text-gray-700 mb-1.5">
+                  Daftar Sampah Terdata ({activeItemsCount} jenis):
+                </p>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                  {activeItemsList.map((it) => (
+                    <div
+                      key={it.sampah.id}
+                      className="flex justify-between items-center text-xs p-2 bg-gray-50/70 rounded-xl border border-gray-100"
+                    >
+                      <div className="min-w-0 pr-2">
+                        <p className="font-semibold text-gray-900 truncate">{it.sampah.nama}</p>
+                        <p className="text-[10px] text-gray-500">
+                          {it.kuantitas} {it.sampah.satuan} × Rp {it.sampah.hargaPerKg.toLocaleString('id-ID')}
+                        </p>
+                      </div>
+                      <span className="font-bold text-forest-950 flex-shrink-0">
+                        Rp {it.subtotal.toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Total Summary */}
+              <div className="p-3 bg-forest-50 border border-forest-100 rounded-2xl flex items-center justify-between text-xs">
+                <div>
+                  <p className="text-[10px] text-forest-700 font-semibold">Total Berat & Rupiah</p>
+                  <p className="font-bold text-forest-950 text-sm">{totalBerat} Kg</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-forest-700 font-semibold">Total Nilai</p>
+                  <p className="font-black text-forest-950 text-base">
+                    Rp {totalHarga.toLocaleString('id-ID')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Cek Kembali
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmitTransaksi}
+                  disabled={submitting}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-forest-900 hover:bg-forest-950 shadow-md transition disabled:opacity-50 flex items-center justify-center space-x-1.5"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Ya, Simpan & Cetak</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

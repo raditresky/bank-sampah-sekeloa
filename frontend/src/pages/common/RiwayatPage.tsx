@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 
 type HistoryFilter = 'ALL' | 'SETORAN' | 'PENCAIRAN';
+type TimeFilter = 'ALL' | 'TODAY' | 'WEEK' | 'MONTH' | 'CUSTOM';
 
 type MergedItem =
   | { kind: 'TRANSAKSI'; data: Transaksi; date: Date }
@@ -37,6 +38,11 @@ export const RiwayatPage: React.FC = () => {
   const [pendingTransactions, setPendingTransactions] = useState<PendingTransaction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [filterType, setFilterType] = useState<HistoryFilter>('ALL');
+
+  // Filter Waktu / Rentang Tanggal
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('ALL');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
   // Selected pencairan detail modal
   const [selectedPencairan, setSelectedPencairan] = useState<Pencairan | null>(null);
@@ -92,9 +98,43 @@ export const RiwayatPage: React.FC = () => {
   ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   const filteredItems = mergedItems.filter((item) => {
-    if (filterType === 'ALL') return true;
-    if (filterType === 'SETORAN') return item.kind === 'TRANSAKSI';
-    if (filterType === 'PENCAIRAN') return item.kind === 'PENCAIRAN';
+    // 1. Filter Tipe
+    if (filterType === 'SETORAN' && item.kind !== 'TRANSAKSI') return false;
+    if (filterType === 'PENCAIRAN' && item.kind !== 'PENCAIRAN') return false;
+
+    // 2. Filter Waktu
+    const itemDate = new Date(item.date);
+    const now = new Date();
+
+    if (timeFilter === 'TODAY') {
+      const isToday =
+        itemDate.getFullYear() === now.getFullYear() &&
+        itemDate.getMonth() === now.getMonth() &&
+        itemDate.getDate() === now.getDate();
+      if (!isToday) return false;
+    } else if (timeFilter === 'WEEK') {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(now.getDate() - 7);
+      oneWeekAgo.setHours(0, 0, 0, 0);
+      if (itemDate < oneWeekAgo) return false;
+    } else if (timeFilter === 'MONTH') {
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setDate(now.getDate() - 30);
+      oneMonthAgo.setHours(0, 0, 0, 0);
+      if (itemDate < oneMonthAgo) return false;
+    } else if (timeFilter === 'CUSTOM') {
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        if (itemDate < start) return false;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        if (itemDate > end) return false;
+      }
+    }
+
     return true;
   });
 
@@ -138,6 +178,51 @@ export const RiwayatPage: React.FC = () => {
         >
           Pencairan ({pencairanList.length})
         </button>
+      </div>
+
+      {/* Filter Waktu & Rentang Tanggal */}
+      <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-2xs space-y-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-gray-700 flex items-center space-x-1.5">
+            <Calendar className="w-3.5 h-3.5 text-forest-700" />
+            <span>Periode Waktu:</span>
+          </span>
+          <select
+            value={timeFilter}
+            onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
+            className="text-xs font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-forest-800"
+          >
+            <option value="ALL">Semua Waktu</option>
+            <option value="TODAY">Hari Ini</option>
+            <option value="WEEK">1 Minggu Terakhir</option>
+            <option value="MONTH">1 Bulan Terakhir</option>
+            <option value="CUSTOM">Pilih Tanggal Tertentu...</option>
+          </select>
+        </div>
+
+        {/* Input Rentang Tanggal (Muncul jika pilih 'Pilih Tanggal Tertentu') */}
+        {timeFilter === 'CUSTOM' && (
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-100 animate-in fade-in">
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 mb-0.5">Dari Tanggal</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-forest-800"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 mb-0.5">Sampai Tanggal</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-forest-800"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Offline Pending Transactions (If any) */}

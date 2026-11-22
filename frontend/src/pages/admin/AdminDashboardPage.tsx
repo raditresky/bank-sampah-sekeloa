@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { dashboardApi } from '../../api/dashboard.api';
 import { pencairanApi } from '../../api/pencairan.api';
 import { kasPosApi, PetugasKasItem } from '../../api/kaspos.api';
+import { userApi } from '../../api/user.api';
 import { DashboardAdminSummary, Pencairan } from '../../types';
 import {
   Scale,
@@ -49,6 +50,15 @@ export const AdminDashboardPage: React.FC = () => {
   const [submittingKas, setSubmittingKas] = useState<boolean>(false);
   const [kasFeedback, setKasFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // Modal Pendaftaran Nasabah Cepat
+  const [isNasabahModalOpen, setIsNasabahModalOpen] = useState<boolean>(false);
+  const [namaNasabah, setNamaNasabah] = useState<string>('');
+  const [nomorHpNasabah, setNomorHpNasabah] = useState<string>('');
+  const [rtNasabah, setRtNasabah] = useState<string>('RT 01');
+  const [passwordNasabah, setPasswordNasabah] = useState<string>('123456');
+  const [submittingNasabah, setSubmittingNasabah] = useState<boolean>(false);
+  const [nasabahFeedback, setNasabahFeedback] = useState<{ type: 'success' | 'error'; message: string; createdUser?: any } | null>(null);
+
   // Action confirm modal (Approve / Reject single request)
   const [actionModal, setActionModal] = useState<{
     isOpen: boolean;
@@ -93,6 +103,63 @@ export const AdminDashboardPage: React.FC = () => {
     setKasFeedback(null);
     setCatatanKas('');
     setNominalKasBaru(summary?.pos?.saldoKas ? summary.pos.saldoKas.toString() : '0');
+  };
+
+  const handleOpenNasabahModal = () => {
+    setIsNasabahModalOpen(true);
+    setNamaNasabah('');
+    setNomorHpNasabah('');
+    setRtNasabah('RT 01');
+    setPasswordNasabah('123456');
+    setNasabahFeedback(null);
+  };
+
+  const handleCreateNasabah = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingNasabah(true);
+    setNasabahFeedback(null);
+
+    try {
+      let cleanHp = nomorHpNasabah.trim().replace(/[\s-]/g, '');
+      if (cleanHp.startsWith('+62')) {
+        cleanHp = '0' + cleanHp.substring(3);
+      } else if (cleanHp.startsWith('62')) {
+        cleanHp = '0' + cleanHp.substring(2);
+      } else if (!cleanHp.startsWith('0') && cleanHp.length > 0) {
+        cleanHp = '0' + cleanHp;
+      }
+
+      const res = await userApi.createNasabah({
+        nama: namaNasabah.trim(),
+        nomorHp: cleanHp,
+        password: passwordNasabah || '123456',
+        rw: user?.rw || 'RW 08',
+        rt: rtNasabah || undefined,
+      });
+
+      setNasabahFeedback({
+        type: 'success',
+        message: `Nasabah ${res.data.nama} berhasil didaftarkan! Kode Nasabah: ${res.data.kodeNasabah}`,
+        createdUser: res.data,
+      });
+
+      await fetchDashboardData();
+    } catch (err: any) {
+      console.error(err);
+      const validationDetails = Array.isArray(err.response?.data?.error)
+        ? err.response.data.error.map((e: any) => e.message).join('. ')
+        : null;
+
+      setNasabahFeedback({
+        type: 'error',
+        message:
+          validationDetails ||
+          err.response?.data?.message ||
+          'Gagal mendaftarkan nasabah baru. Periksa nomor HP atau kelengkapan data.',
+      });
+    } finally {
+      setSubmittingNasabah(false);
+    }
   };
 
   const handleUpdateSaldoKas = async (e: React.FormEvent) => {
@@ -419,9 +486,7 @@ export const AdminDashboardPage: React.FC = () => {
 
           {/* Pintasan 5: Nasabah Baru */}
           <button
-            onClick={() => {
-              alert('Fitur Pendaftaran Nasabah: Arahkan warga untuk membuka halaman pendaftaran di aplikasi mereka!');
-            }}
+            onClick={handleOpenNasabahModal}
             className="bg-white p-3.5 rounded-2xl border border-gray-100 shadow-2xs flex items-center space-x-3 active:scale-95 transition text-left hover:border-forest-200 col-span-2 sm:col-span-1"
           >
             <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-800 flex items-center justify-center flex-shrink-0">
@@ -836,6 +901,163 @@ export const AdminDashboardPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Pendaftaran Nasabah Cepat */}
+      {isNasabahModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in">
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[90vh] flex flex-col shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3 flex-shrink-0">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-gray-900">Pendaftaran Nasabah Baru</h3>
+                  <p className="text-[11px] text-gray-500">Daftarkan warga ke {user?.rw || 'RW setempat'}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsNasabahModalOpen(false)}
+                className="p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="overflow-y-auto space-y-4 pr-1">
+              {nasabahFeedback && (
+                <div
+                  className={`p-3 rounded-2xl text-xs flex flex-col space-y-2 ${
+                    nasabahFeedback.type === 'success'
+                      ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                      : 'bg-red-50 border border-red-200 text-red-800'
+                  }`}
+                >
+                  <div className="flex items-start space-x-2">
+                    {nasabahFeedback.type === 'success' ? (
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-emerald-600" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-red-600" />
+                    )}
+                    <span className="font-semibold">{nasabahFeedback.message}</span>
+                  </div>
+
+                  {nasabahFeedback.createdUser && (
+                    <div className="pt-2 border-t border-emerald-200/60 flex items-center justify-between">
+                      <span className="text-[11px] font-mono font-bold">
+                        {nasabahFeedback.createdUser.kodeNasabah}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsNasabahModalOpen(false);
+                          navigate(`/timbangan?wargaId=${nasabahFeedback.createdUser.id}`);
+                        }}
+                        className="px-2.5 py-1 bg-emerald-700 text-white rounded-lg text-[10px] font-bold hover:bg-emerald-800 transition"
+                      >
+                        Langsung Timbang &gt;
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <form onSubmit={handleCreateNasabah} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Nama Lengkap Warga</label>
+                  <input
+                    type="text"
+                    required
+                    value={namaNasabah}
+                    onChange={(e) => setNamaNasabah(e.target.value)}
+                    placeholder="Contoh: Ibu Siti Aminah"
+                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Nomor WhatsApp / HP</label>
+                  <input
+                    type="tel"
+                    required
+                    value={nomorHpNasabah}
+                    onChange={(e) => setNomorHpNasabah(e.target.value)}
+                    placeholder="Contoh: 081234567890"
+                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-700"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">Wilayah RW</label>
+                    <input
+                      type="text"
+                      disabled
+                      value={user?.rw || 'RW 08'}
+                      className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-gray-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">RT (Opsional)</label>
+                    <input
+                      type="text"
+                      value={rtNasabah}
+                      onChange={(e) => setRtNasabah(e.target.value)}
+                      placeholder="RT 01"
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-700"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    PIN / Password Awal Nasabah
+                  </label>
+                  <input
+                    type="text"
+                    value={passwordNasabah}
+                    onChange={(e) => setPasswordNasabah(e.target.value)}
+                    placeholder="Default: 123456"
+                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-700 font-mono"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    Nasabah dapat mengganti kata sandi setelah masuk ke aplikasi mereka.
+                  </p>
+                </div>
+
+                <div className="flex space-x-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsNasabahModalOpen(false)}
+                    className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition"
+                  >
+                    Tutup
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingNasabah}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 shadow-md transition disabled:opacity-50 flex items-center justify-center space-x-1.5"
+                  >
+                    {submittingNasabah ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Mendaftarkan...</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-3.5 h-3.5" />
+                        <span>Daftarkan Warga</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

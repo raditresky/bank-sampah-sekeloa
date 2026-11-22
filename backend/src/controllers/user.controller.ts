@@ -1,9 +1,26 @@
 import { Response, NextFunction } from 'express';
 import { userRepository } from '../repositories/user.repository';
+import { authService } from '../services/auth.service';
 import { sendSuccess, sendError } from '../utils/response.util';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
+import { UserRole } from '@prisma/client';
 
 export class UserController {
+  async createNasabah(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      // Pastikan role yang didaftarkan lewat admin adalah WARGA
+      const payload = {
+        ...req.body,
+        role: UserRole.WARGA,
+        rw: req.body.rw || req.user?.rw || 'RW 08',
+      };
+      const result = await authService.register(payload);
+      return sendSuccess(res, result.user, 'Nasabah baru berhasil didaftarkan.', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async searchNasabah(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const q = req.query.q as string | undefined;

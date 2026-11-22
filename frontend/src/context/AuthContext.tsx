@@ -9,8 +9,8 @@ interface AuthContextType {
   isAdmin: boolean;
   isWarga: boolean;
   loading: boolean;
-  login: (payload: LoginPayload) => Promise<void>;
-  register: (payload: RegisterPayload) => Promise<void>;
+  login: (payload: LoginPayload, rememberMe?: boolean) => Promise<void>;
+  register: (payload: RegisterPayload, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -19,10 +19,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('user');
+    const saved = localStorage.getItem('user') || sessionStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(() => {
+    return localStorage.getItem('token') || sessionStorage.getItem('token');
+  });
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -31,13 +33,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const res = await authApi.getMe();
           setUser(res.data);
-          localStorage.setItem('user', JSON.stringify(res.data));
+          if (localStorage.getItem('token')) {
+            localStorage.setItem('user', JSON.stringify(res.data));
+          } else {
+            sessionStorage.setItem('user', JSON.stringify(res.data));
+          }
         } catch (e) {
           console.error('Session expired or invalid', e);
           setUser(null);
           setToken(null);
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('user');
         }
       }
       setLoading(false);
@@ -46,20 +54,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, [token]);
 
-  const login = async (payload: LoginPayload) => {
+  const login = async (payload: LoginPayload, rememberMe: boolean = true) => {
     const res = await authApi.login(payload);
     setToken(res.data.token);
     setUser(res.data.user);
-    localStorage.setItem('token', res.data.token);
-    localStorage.setItem('user', JSON.stringify(res.data.user));
+    
+    // Simpan pilihan remember me
+    localStorage.setItem('rememberMe', rememberMe ? 'true' : 'false');
+    if (rememberMe) {
+      localStorage.setItem('savedNomorHp', payload.nomorHp);
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+    } else {
+      localStorage.removeItem('savedNomorHp');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      sessionStorage.setItem('token', res.data.token);
+      sessionStorage.setItem('user', JSON.stringify(res.data.user));
+    }
   };
 
-  const register = async (payload: RegisterPayload) => {
+  const register = async (payload: RegisterPayload, rememberMe: boolean = true) => {
     const res = await authApi.register(payload);
     setToken(res.data.token);
     setUser(res.data.user);
-    localStorage.setItem('token', res.data.token);
-    localStorage.setItem('user', JSON.stringify(res.data.user));
+    if (rememberMe) {
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+    } else {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      sessionStorage.setItem('token', res.data.token);
+      sessionStorage.setItem('user', JSON.stringify(res.data.user));
+    }
   };
 
   const logout = () => {
@@ -67,6 +98,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
   };
 
   const refreshUser = async () => {
@@ -74,7 +107,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const res = await authApi.getMe();
         setUser(res.data);
-        localStorage.setItem('user', JSON.stringify(res.data));
+        if (localStorage.getItem('token')) {
+          localStorage.setItem('user', JSON.stringify(res.data));
+        } else {
+          sessionStorage.setItem('user', JSON.stringify(res.data));
+        }
       } catch (err) {
         console.error('Failed to refresh user', err);
       }

@@ -8,7 +8,7 @@ const api = axios.create({
 // Interceptor untuk menambahkan Bearer token otomatis
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -29,6 +29,8 @@ api.interceptors.response.use(
       if (!originalRequest.url.includes('/auth/login') && !originalRequest.url.includes('/auth/register')) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
         window.location.href = '/login';
       }
     }
