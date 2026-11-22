@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import ReactDOM from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { sampahApi } from '../../api/sampah.api';
@@ -21,6 +22,7 @@ import {
   RefreshCw,
   UserCheck,
   Package,
+  X,
 } from 'lucide-react';
 import { QrScannerModal } from '../../components/timbangan/QrScannerModal';
 
@@ -775,9 +777,13 @@ export const TimbanganPage: React.FC = () => {
         </div>
       )}
 
-      {/* Modal Konfirmasi Validasi Penimbangan */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in">
+      {/* Modal Konfirmasi Validasi Penimbangan — di-render via Portal ke document.body
+          agar tidak terpengaruh overflow/transform/stacking context dari parent */}
+      {showConfirmModal && ReactDOM.createPortal(
+        <div
+          className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowConfirmModal(false); }}
+        >
           <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[90vh] flex flex-col shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div className="flex items-center space-x-2">
@@ -786,7 +792,7 @@ export const TimbanganPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-sm font-extrabold text-gray-900">Konfirmasi Penimbangan</h3>
-                  <p className="text-[11px] text-gray-500">Pastikan seluruh data sampah sudah sesuai</p>
+                  <p className="text-[11px] text-gray-500">Pastikan seluruh data sampah sudah sesuai sebelum disimpan</p>
                 </div>
               </div>
               <button
@@ -797,16 +803,16 @@ export const TimbanganPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="overflow-y-auto space-y-3">
+            <div className="overflow-y-auto space-y-3 flex-1">
               {/* Info Nasabah */}
               <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 text-xs space-y-1">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Nasabah:</span>
-                  <span className="font-bold text-gray-900">{warga?.nama}</span>
+                  <span className="font-bold text-gray-900">{warga?.nama ?? '-'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Kode Nasabah:</span>
-                  <span className="font-mono font-bold text-forest-800">{warga?.kodeNasabah}</span>
+                  <span className="font-mono font-bold text-forest-800">{warga?.kodeNasabah ?? '-'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Metode:</span>
@@ -830,7 +836,7 @@ export const TimbanganPage: React.FC = () => {
                       <div className="min-w-0 pr-2">
                         <p className="font-semibold text-gray-900 truncate">{it.sampah.nama}</p>
                         <p className="text-[10px] text-gray-500">
-                          {it.kuantitas} {it.sampah.satuan} × Rp {it.sampah.hargaPerKg.toLocaleString('id-ID')}
+                          {it.kuantitas} {it.sampah.satuan} × Rp {Number(it.sampah.hargaSatuan).toLocaleString('id-ID')}
                         </p>
                       </div>
                       <span className="font-bold text-forest-950 flex-shrink-0">
@@ -844,7 +850,7 @@ export const TimbanganPage: React.FC = () => {
               {/* Total Summary */}
               <div className="p-3 bg-forest-50 border border-forest-100 rounded-2xl flex items-center justify-between text-xs">
                 <div>
-                  <p className="text-[10px] text-forest-700 font-semibold">Total Berat & Rupiah</p>
+                  <p className="text-[10px] text-forest-700 font-semibold">Total Berat &amp; Rupiah</p>
                   <p className="font-bold text-forest-950 text-sm">{totalBerat} Kg</p>
                 </div>
                 <div className="text-right">
@@ -861,7 +867,7 @@ export const TimbanganPage: React.FC = () => {
                   onClick={() => setShowConfirmModal(false)}
                   className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition"
                 >
-                  Cek Kembali
+                  ✏️ Cek Kembali
                 </button>
                 <button
                   type="button"
@@ -870,12 +876,13 @@ export const TimbanganPage: React.FC = () => {
                   className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-forest-900 hover:bg-forest-950 shadow-md transition disabled:opacity-50 flex items-center justify-center space-x-1.5"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Ya, Simpan & Cetak</span>
+                  <span>Ya, Simpan &amp; Cetak</span>
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* QR Scanner Modal */}
