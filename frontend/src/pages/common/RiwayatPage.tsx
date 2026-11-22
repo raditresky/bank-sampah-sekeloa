@@ -159,6 +159,7 @@ export const RiwayatPage: React.FC = () => {
       'Total Berat (Kg)',
       'Total Nominal (Rp)',
       'Metode / Status',
+      'Admin / Petugas Bertugas',
       'Rincian Sampah / Catatan',
     ];
 
@@ -197,10 +198,13 @@ export const RiwayatPage: React.FC = () => {
           trx.totalBerat,
           trx.totalHarga,
           trx.statusPembayaran,
+          trx.petugas?.nama || 'Petugas RW',
           rincian || '-',
         ].map(escapeCsv).join(',');
       } else {
         const pnc = item.data;
+        const namaAdminPencair = pnc.petugas?.nama || (pnc.status === 'DISETUJUI' ? 'Admin RW' : '-');
+
         return [
           idx + 1,
           dateStr,
@@ -212,6 +216,7 @@ export const RiwayatPage: React.FC = () => {
           '-',
           pnc.jumlahNominal,
           `${pnc.metode} (${pnc.status})`,
+          namaAdminPencair,
           pnc.catatan || pnc.infoRekening || '-',
         ].map(escapeCsv).join(',');
       }
