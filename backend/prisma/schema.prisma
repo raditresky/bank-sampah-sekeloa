@@ -102,8 +102,8 @@ model TransaksiSampah {
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
 
-  warga            User                    @relation("WargaTransaksi", fields: [userId], references: [id], onDelete: Restrict)
-  petugas          User                    @relation("PetugasTransaksi", fields: [petugasId], references: [id], onDelete: Restrict)
+  warga            User                    @relation("WargaTransaksi", fields: [userId], references: [id], onDelete: Cascade)
+  petugas          User                    @relation("PetugasTransaksi", fields: [petugasId], references: [id], onDelete: Cascade)
   items            DetailTransaksiSampah[]
 
   @@index([userId])
@@ -142,7 +142,7 @@ model PencairanTabungan {
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
 
-  warga           User            @relation("WargaPencairan", fields: [userId], references: [id], onDelete: Restrict)
+  warga           User            @relation("WargaPencairan", fields: [userId], references: [id], onDelete: Cascade)
   petugas         User?           @relation("PetugasPencairan", fields: [disetujuiOlehId], references: [id], onDelete: SetNull)
 
   @@index([userId])
