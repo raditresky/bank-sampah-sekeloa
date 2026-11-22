@@ -109,7 +109,7 @@ export const LoginPage: React.FC = () => {
         {/* App Logo & Title */}
         <div className="flex flex-col items-center text-center mb-6">
           <div className="mb-3">
-            <AppLogo size="lg" showCheckmark={true} />
+            <AppLogo size="lg" showCheckmark={false} />
           </div>
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">Sampiah</h1>
           <p className="text-xs text-gray-500 font-medium mt-1">

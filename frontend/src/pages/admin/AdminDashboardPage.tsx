@@ -618,18 +618,6 @@ export const AdminDashboardPage: React.FC = () => {
         )}
       </div>
 
-      {/* 7. Penyaluran Info Banner */}
-      <div className="bg-forest-50/70 border border-forest-100 rounded-3xl p-4 flex items-start space-x-3">
-        <Info className="w-5 h-5 text-forest-800 flex-shrink-0 mt-0.5" />
-        <div>
-          <h5 className="text-xs font-bold text-forest-950">Penyaluran Hasil Pilah RW 08</h5>
-          <p className="text-[11px] text-forest-800 leading-relaxed mt-0.5">
-            Truk pengepul DLH Kota Bandung dijadwalkan tiba pukul 16:30 WIB. Pastikan timbangan
-            terverifikasi sebelum penjemputan.
-          </p>
-        </div>
-      </div>
-
       {/* MODAL DAFTAR PERMOHONAN PENCAIRAN TABUNGAN (DIBUKA DARI PINTASAN OPERASIONAL) */}
       {isPencairanModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in">
